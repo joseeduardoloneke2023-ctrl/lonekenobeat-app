@@ -738,7 +738,7 @@
                         </a>
                     </div>
 
-                    <!-- ABAS DE NAVEGAÇÃO -->
+                    <!-- ABAS DE NAVEGAÇÃO DA AULA -->
                     <div style="margin-top:1.5rem; border-top:1px solid var(--border-color); padding-top:1.2rem;">
                         <div style="display:flex; gap:12px; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
                             <button class="btn-lms-tab active" id="tab-btn-desc" onclick="switchLmsTab('desc')"><i class="fa-solid fa-align-left"></i> Descrição da Aula</button>
@@ -753,11 +753,13 @@
 
                         <!-- ABA COMENTÁRIOS DA AULA -->
                         <div id="lms-tab-comments" style="display:none;">
-                            <div style="display:flex; gap:10px; margin-bottom:1rem;">
+                            <div style="display:flex; gap:10px; margin-bottom:1.2rem;">
                                 <input type="text" id="lms-comment-input" class="search-input" placeholder="Escreva uma pergunta ou comentário sobre esta aula..." onkeydown="if(event.key==='Enter') sendLessonComment()">
-                                <button class="btn-action btn-primary" onclick="sendLessonComment()" style="width:auto; padding:0 22px;"><i class="fa-solid fa-paper-plane"></i></button>
+                                <button class="btn-action btn-primary" id="btn-send-lms-comment" onclick="sendLessonComment()" style="width:auto; padding:0 22px;">
+                                    <i class="fa-solid fa-paper-plane"></i> Comentar
+                                </button>
                             </div>
-                            <div id="lms-comments-list" style="display:flex; flex-direction:column; gap:10px; max-height:220px; overflow-y:auto; padding-right:5px;">
+                            <div id="lms-comments-list" style="display:flex; flex-direction:column; gap:12px; max-height:280px; overflow-y:auto; padding-right:5px;">
                                 <p style="color:var(--text-muted); font-size:0.82rem; text-align:center;">A carregar comentários...</p>
                             </div>
                         </div>
@@ -825,7 +827,7 @@
         let unsubscribeChat = null;
         let unsubscribeComments = null;
 
-        // Variaveis de Estado da Sala de Aula (LMS)
+        // Variáveis de Estado da Sala de Aula (LMS)
         let activeCourseLessons = [];
         let currentLessonIndex = 0;
         let activeCourseId = null;
@@ -909,7 +911,7 @@
                 const base64Data = e.target.result;
                 document.getElementById('prof-photo-url').value = base64Data;
                 updateProfileAvatarPreview();
-                showToast('Imagem carregada do seu dispositivo com sucesso! Clique em "Guardar Alterações".', 'info');
+                showToast('Imagem carregada com sucesso! Clique em "Guardar Alterações".', 'info');
             };
             reader.readAsDataURL(file);
         }
@@ -1105,23 +1107,27 @@
                 `;
             }
 
+            // Identificação se o produto É um CURSO
+            const catLower = String(p.categoria || '').toLowerCase();
+            const tipoLower = String(p.tipo || '').toLowerCase();
+            const isCourse = catLower === 'curso' || catLower === 'cursos' || tipoLower === 'curso' || tipoLower === 'cursos';
+
             let actionButton = '';
             if (isUnlocked) {
-                const hasCourse = p.categoria === 'cursos' || 
-                                  p.tipo === 'curso' || 
-                                  (p.modulos && (Array.isArray(p.modulos) ? p.modulos.length > 0 : Object.keys(p.modulos).length > 0)) ||
-                                  (p.aulas && (Array.isArray(p.aulas) ? p.aulas.length > 0 : Object.keys(p.aulas).length > 0)) ||
-                                  p.videoLink || p.videoDemo || p.videoUrl;
-
-                if (hasCourse) {
+                if (isCourse) {
+                    // Botão EXCLUSIVO para CURSOS DESBLOQUEADOS
                     actionButton = `<button class="btn-action btn-success" onclick="openCoursePlayer('${safeId}')"><i class="fa-solid fa-graduation-cap"></i> Assistir Aulas / Curso</button>`;
-                } else if (p.linkDownload || p.linkCheckout || p.downloadUrl) {
-                    const targetLink = p.linkDownload || p.linkCheckout || p.downloadUrl;
-                    actionButton = `<a href="${escapeHtml(targetLink)}" target="_blank" class="btn-action btn-success"><i class="fa-solid fa-cloud-arrow-down"></i> Baixar Conteúdo (Mediafire/Drive)</a>`;
                 } else {
-                    actionButton = `<button class="btn-action btn-secondary" onclick="switchView('chat')"><i class="fa-solid fa-headset"></i> Pedir Ficheiro no Chat</button>`;
+                    // Botão de BAIXAR para OUTROS PRODUTOS
+                    const targetLink = p.linkDownload || p.downloadUrl || p.linkCheckout;
+                    if (targetLink) {
+                        actionButton = `<a href="${escapeHtml(targetLink)}" target="_blank" class="btn-action btn-success"><i class="fa-solid fa-cloud-arrow-down"></i> Baixar Kit / Conteúdo</a>`;
+                    } else {
+                        actionButton = `<button class="btn-action btn-secondary" onclick="switchView('chat')"><i class="fa-solid fa-headset"></i> Pedir Ficheiro no Chat</button>`;
+                    }
                 }
             } else {
+                // Produto BLOQUEADO
                 const whatsappMsg = encodeURIComponent(`Olá Loneke no Beat, desejo adquirir o produto: ${p.titulo}`);
                 const checkoutUrl = `https://wa.me/244924034159?text=${whatsappMsg}`;
                 actionButton = `<a href="${checkoutUrl}" target="_blank" class="btn-action btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp (${price})</a>`;
@@ -1187,7 +1193,7 @@
         }
 
         // ==========================================
-        // 6. SALA DE AULA LMS COM PROCESSAMENTO E COMENTÁRIOS
+        // 6. SALA DE AULA LMS COM PROCESSAMENTO E VÍDEOS
         // ==========================================
         function showLmsProcessing() {
             const screen = document.getElementById('lms-processing-screen');
@@ -1381,7 +1387,7 @@
 
             setTimeout(hideLmsProcessing, 600);
 
-            // Carrega comentários da aula
+            // Carrega e sincroniza comentários em tempo real para esta aula específica
             listenLessonComments();
         }
 
@@ -1408,7 +1414,7 @@
         }
 
         // ==========================================
-        // 7. SISTEMA DE COMENTÁRIOS DA SALA DE AULA
+        // 7. SISTEMA DE COMENTÁRIOS DA SALA DE AULA (VÍDEOS DO CURSO)
         // ==========================================
         function listenLessonComments() {
             if (!activeCourseId) return;
@@ -1425,26 +1431,30 @@
                     document.getElementById('lms-comments-count').innerText = snapshot.size;
 
                     if (snapshot.empty) {
-                        commentsContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.82rem; text-align:center;">Nenhum comentário ainda. Seja o primeiro a comentar!</p>`;
+                        commentsContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.82rem; text-align:center; padding:10px;">Nenhum comentário ainda nesta aula. Seja o primeiro a comentar!</p>`;
                         return;
                     }
 
                     snapshot.forEach(doc => {
                         const c = doc.data();
-                        const timeStr = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleDateString('pt-AO') : 'Agora';
+                        const timeStr = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleString('pt-AO', { dateStyle: 'short', timeStyle: 'short' }) : 'Agora';
+                        const isMyComment = currentUser && (c.userEmail === currentUser.email);
 
                         commentsContainer.innerHTML += `
-                            <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:10px 14px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                    <span style="font-weight:800; font-size:0.85rem; color:#FFF;"><i class="fa-solid fa-user-circle" style="color:var(--primary); margin-right:6px;"></i> ${escapeHtml(c.userName)}</span>
-                                    <span style="font-size:0.72rem; color:var(--text-muted);">${timeStr}</span>
+                            <div style="background:${isMyComment ? 'rgba(229, 9, 20, 0.08)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isMyComment ? 'rgba(229, 9, 20, 0.3)' : 'var(--border-color)'}; border-radius:var(--radius-md); padding:12px 14px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-weight:800; font-size:0.85rem; color:#FFF; display:flex; align-items:center; gap:6px;">
+                                        <i class="fa-solid fa-user-circle" style="color:var(--primary);"></i> ${escapeHtml(c.userName || 'Cliente VIP')} ${isMyComment ? '<span style="font-size:0.68rem; background:var(--primary); color:#FFF; padding:1px 6px; border-radius:10px; margin-left:4px;">Você</span>' : ''}
+                                    </span>
+                                    <span style="font-size:0.72rem; color:var(--text-muted);"><i class="fa-regular fa-clock"></i> ${timeStr}</span>
                                 </div>
-                                <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.4;">${escapeHtml(c.text)}</p>
+                                <p style="font-size:0.84rem; color:var(--text-main); line-height:1.4; word-break:break-word;">${escapeHtml(c.text)}</p>
                             </div>
                         `;
                     });
                 }, err => {
                     console.warn("Aviso Firestore (Comentários):", err);
+                    commentsContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.82rem; text-align:center;">Erro ao carregar comentários.</p>`;
                 });
         }
 
@@ -1455,24 +1465,31 @@
             const text = input.value.trim();
             if (!text) return;
 
+            const btn = document.getElementById('btn-send-lms-comment');
+            if (btn) btn.disabled = true;
+
             input.value = '';
             const lessonDocId = `${activeCourseId}_aula_${currentLessonIndex}`;
 
             try {
-                const userName = document.getElementById('sidebar-user-name').innerText || 'Membro VIP';
+                const userName = document.getElementById('sidebar-user-name').innerText || 'Cliente VIP';
                 await db.collection('aulas_comentarios').doc(lessonDocId).collection('mensagens').add({
                     userName: userName,
                     userEmail: currentUser.email,
+                    userId: currentUser.uid,
                     text: text,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                showToast('Comentário publicado com sucesso!', 'success');
+                showToast('Comentário publicado!', 'success');
             } catch (err) {
                 showToast('Erro ao publicar comentário: ' + err.message, 'warning');
+            } finally {
+                if (btn) btn.disabled = false;
             }
         }
 
         function closeCourseModal() {
+            if (unsubscribeComments) unsubscribeComments();
             const playerIframe = document.getElementById('lms-iframe-player');
             if (playerIframe) playerIframe.src = '';
             document.getElementById('course-modal').style.display = 'none';
@@ -1490,7 +1507,7 @@
 
             const demoUrl = prod.videoDemo || prod.videoLink || prod.previewUrl || prod.videoUrl || prod.url || prod.link;
             if (!demoUrl) {
-                showToast('Nenum vídeo de demonstração disponível para este produto.', 'warning');
+                showToast('Nenhum vídeo de demonstração disponível para este produto.', 'warning');
                 return;
             }
 
