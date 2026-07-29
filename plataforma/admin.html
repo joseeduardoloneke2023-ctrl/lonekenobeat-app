@@ -585,7 +585,7 @@
             <!-- 6. USERS VIEW -->
             <section id="view-users" class="panel-view">
                 <h2 class="view-title"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Base de Usuários Cadastrados</h2>
-                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Lista completa de contas registadas no sistema.</p>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Lista completa de contas registadas no sistema (Cadastro direto + Checkout).</p>
 
                 <div class="table-container">
                     <table class="admin-table">
@@ -595,6 +595,7 @@
                                 <th>Email</th>
                                 <th>WhatsApp</th>
                                 <th>País</th>
+                                <th>Origem</th>
                                 <th style="text-align:right;">Ação</th>
                             </tr>
                         </thead>
@@ -798,6 +799,7 @@
         let unsubscribeProducts = null;
         let unsubscribeAccess = null;
         let unsubscribeUsers = null;
+        let unsubscribeTransactionsUsers = null;
         let unsubscribeChatList = null;
         let unsubscribeChatMessages = null;
 
@@ -1277,8 +1279,20 @@
                     console.error("Erro ao ler faturamento:", err);
                 });
 
-            db.collection('users').get().then(snapshot => {
-                document.getElementById('kpi-users').innerText = snapshot.size;
+            // Atualiza KPI com total único de clientes
+            Promise.all([
+                db.collection('users').get(),
+                db.collection('transactions').get()
+            ]).then(([usersSnap, txSnap]) => {
+                const uniqueEmails = new Set();
+                usersSnap.forEach(doc => {
+                    if (doc.data().email) uniqueEmails.add(doc.data().email.toLowerCase());
+                });
+                txSnap.forEach(doc => {
+                    const e = doc.data().userEmail || doc.data().email;
+                    if (e && e !== 'N/A') uniqueEmails.add(e.toLowerCase());
+                });
+                document.getElementById('kpi-users').innerText = uniqueEmails.size;
             }).catch(() => {
                 document.getElementById('kpi-users').innerText = '0';
             });
@@ -1917,48 +1931,117 @@
         }
 
         // ==========================================
-        // 13. BASE DE USUÁRIOS
+        // 13. BASE DE USUÁRIOS (CADASTRO + CHECKOUT)
         // ==========================================
         function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             if (unsubscribeUsers) unsubscribeUsers();
+            if (unsubscribeTransactionsUsers) unsubscribeTransactionsUsers();
 
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando todos os usuários...</td></tr>`;
+
+            let registeredUsersMap = new Map();
+            let checkoutUsersMap = new Map();
+
+            function renderCombinedUsers() {
+                // Junta ambas as fontes dando preferência aos dados de cadastro completo
+                const combinedMap = new Map();
+
+                // 1. Adiciona usuários vindos do checkout
+                checkoutUsersMap.forEach((u, emailKey) => {
+                    combinedMap.set(emailKey, u);
+                });
+
+                // 2. Sobrescreve/adiciona com dados completos da tela de cadastro
+                registeredUsersMap.forEach((u, emailKey) => {
+                    combinedMap.set(emailKey, u);
+                });
+
+                tbody.innerHTML = '';
+
+                if (combinedMap.size === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum usuário cadastrado ou registrado via checkout.</td></tr>`;
+                    return;
+                }
+
+                combinedMap.forEach((u) => {
+                    const cleanWhatsapp = u.whatsapp ? String(u.whatsapp).replace(/\D/g, '') : '';
+                    const safeName = escapeJsArg(u.name || 'Utilizador');
+                    const safeEmail = escapeJsArg(u.email || '');
+                    const sourceBadge = u.source === 'cadastro' 
+                        ? `<span class="cat-badge" style="background:rgba(16,185,129,0.15); color:var(--success);"><i class="fa-solid fa-user-plus"></i> Tela Cadastro</span>` 
+                        : `<span class="cat-badge" style="background:rgba(59,130,246,0.15); color:var(--info);"><i class="fa-solid fa-cart-shopping"></i> Checkout</span>`;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-weight:600;">${escapeHtml(u.name || 'Cliente')}</td>
+                            <td style="color:var(--text-muted);">${escapeHtml(u.email || 'N/A')}</td>
+                            <td>
+                                ${u.whatsapp ? `
+                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(u.whatsapp)}
+                                    </a>
+                                ` : '<span style="color:var(--text-muted);">Não informado</span>'}
+                            </td>
+                            <td>${escapeHtml(u.country || 'Angola')}</td>
+                            <td>${sourceBadge}</td>
+                            <td style="text-align:right;">
+                                <button class="btn-action btn-primary" style="padding:6px 12px; font-size:0.78rem;" 
+                                    onclick="openChatWithUser('${u.id}', '${safeName}', '${safeEmail}')">
+                                    <i class="fa-solid fa-comments"></i> Chat
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Ouvinte 1: Coleção de Usuários Registrados
             unsubscribeUsers = db.collection('users')
-                .orderBy('createdAt', 'desc')
                 .onSnapshot(snapshot => {
-                    tbody.innerHTML = '';
-                    if (snapshot.empty) {
-                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum usuário registrado.</td></tr>`;
-                        return;
-                    }
+                    registeredUsersMap.clear();
                     snapshot.forEach(doc => {
                         const u = doc.data();
-                        const cleanWhatsapp = u.whatsapp ? String(u.whatsapp).replace(/\D/g, '') : '';
-                        const safeName = escapeJsArg(u.name || 'Utilizador');
-                        const safeEmail = escapeJsArg(u.email || '');
-
-                        tbody.innerHTML += `
-                            <tr>
-                                <td style="font-weight:600;">${escapeHtml(u.name || 'Sem Nome')}</td>
-                                <td style="color:var(--text-muted);">${escapeHtml(u.email || 'N/A')}</td>
-                                <td>
-                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
-                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(u.whatsapp || 'Não informado')}
-                                    </a>
-                                </td>
-                                <td>${escapeHtml(u.country || 'Angola')}</td>
-                                <td style="text-align:right;">
-                                    <button class="btn-action btn-primary" style="padding:6px 12px; font-size:0.78rem;" 
-                                        onclick="openChatWithUser('${doc.id}', '${safeName}', '${safeEmail}')">
-                                        <i class="fa-solid fa-comments"></i> Chat
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
+                        const email = (u.email || '').trim().toLowerCase();
+                        if (email) {
+                            registeredUsersMap.set(email, {
+                                id: doc.id,
+                                name: u.name || 'Sem Nome',
+                                email: u.email,
+                                whatsapp: u.whatsapp || '',
+                                country: u.country || 'Angola',
+                                source: 'cadastro'
+                            });
+                        }
                     });
+                    renderCombinedUsers();
                 }, err => {
-                    console.error(err);
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar usuários.</td></tr>`;
+                    console.error("Erro ao carregar usuários da coleção 'users':", err);
+                });
+
+            // Ouvinte 2: Coleção de Transações (Checkout)
+            unsubscribeTransactionsUsers = db.collection('transactions')
+                .onSnapshot(snapshot => {
+                    checkoutUsersMap.clear();
+                    snapshot.forEach(doc => {
+                        const t = doc.data();
+                        const email = (t.userEmail || t.email || '').trim().toLowerCase();
+                        if (email && email !== 'n/a') {
+                            if (!checkoutUsersMap.has(email)) {
+                                checkoutUsersMap.set(email, {
+                                    id: doc.id,
+                                    name: t.userName || t.nome || 'Cliente Checkout',
+                                    email: email,
+                                    whatsapp: t.whatsapp || t.phone || '',
+                                    country: t.country || 'Angola',
+                                    source: 'checkout'
+                                });
+                            }
+                        }
+                    });
+                    renderCombinedUsers();
+                }, err => {
+                    console.error("Erro ao carregar compras da coleção 'transactions':", err);
                 });
         }
 
