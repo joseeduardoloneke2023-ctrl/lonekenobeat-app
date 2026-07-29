@@ -467,7 +467,7 @@
 
             <!-- 2. VIEW DE VENDAS E PRODUTOS PENDENTES DO CHECKOUT -->
             <section id="view-pending-sales" class="panel-view">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                <div style="display:flex; justify-space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
                     <div>
                         <h2 class="view-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> Vendas Pendentes (Checkout)</h2>
                         <p style="color:var(--text-muted); font-size:0.95rem;">Visualize as compras pendentes e autorize/libere o produto para cada e-mail.</p>
@@ -671,7 +671,7 @@
                 <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1rem;">
                     <div>
                         <label class="form-label"><i class="fa-solid fa-heading" style="color:var(--primary);"></i> Título do Produto (`titulo`)</label>
-                        <input type="text" id="p-titulo" class="search-input" placeholder="Ex: FLP MORENA - PROD. LONEKE NO BEAT" oninput="generateSlugPreview()">
+                        <input type="text" id="p-titulo" class="search-input" placeholder="Ex: FLP SEMBA MORENA - PROD. LONEKE NO BEAT" oninput="generateSlugPreview()">
                     </div>
                     <div>
                         <label class="form-label"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Categoria (`categoria`)</label>
@@ -1558,125 +1558,90 @@
         // ==========================================
         // 11. LIBERAÇÃO DE ACESSOS POR E-MAIL E PERFIL
         // ==========================================
-        async function loadAccessRequests() {
-            const tbody = document.getElementById('access-table-body');
-            if (unsubscribeAccess) unsubscribeAccess();
+// ==========================================
+// 11. LIBERAÇÃO DE ACESSOS POR E-MAIL E PERFIL
+// ==========================================
+async function loadAccessRequests() {
+    const tbody = document.getElementById('access-table-body');
+    if (unsubscribeAccess) unsubscribeAccess();
 
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando permissões e acessos...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando permissões e acessos...</td></tr>`;
 
-            try {
-                const [accessSnap, usersSnap, prodSnap] = await Promise.all([
-                    db.collection('user_access').get(),
-                    db.collection('users').get(),
-                    db.collection('produtos').get()
-                ]);
+    try {
+        // Busca SOMENTE a tabela user_access
+        const accessSnap = await db.collection('user_access').get();
 
-                const productTitlesMap = {};
-                prodSnap.forEach(pDoc => {
-                    const pData = pDoc.data();
-                    productTitlesMap[pDoc.id] = pData.titulo || pData.title || pDoc.id;
-                    if (pData.uuid) productTitlesMap[pData.uuid] = pData.titulo || pData.title;
-                });
+        tbody.innerHTML = '';
 
-                const accessMap = new Map();
-
-                // 1. Processar coleção user_access
-                accessSnap.forEach(doc => {
-                    const acc = doc.data();
-                    const key = `${acc.userEmail || acc.userId}_${acc.productId}`;
-                    accessMap.set(key, {
-                        id: doc.id,
-                        userId: acc.userId || '',
-                        userEmail: acc.userEmail || '',
-                        userName: acc.userName || 'Cliente',
-                        whatsapp: acc.whatsapp || '',
-                        productId: acc.productId || '',
-                        productTitle: acc.productTitle || productTitlesMap[acc.productId] || acc.productId || 'Produto',
-                        status: acc.status || 'locked',
-                        requestedAt: acc.requestedAt ? parseFirebaseDate(acc.requestedAt) : new Date()
-                    });
-                });
-
-                // 2. Incluir acessos gravados diretamente na tabela 'users' (produtos.{productId} = true)
-                usersSnap.forEach(uDoc => {
-                    const uData = uDoc.data();
-                    const uEmail = uData.email || uData.userEmail || '';
-                    const uName = uData.name || uData.nome || uData.displayName || 'Cliente';
-                    const uWhatsapp = uData.whatsapp || uData.telefone || '';
-
-                    if (uData.produtos && typeof uData.produtos === 'object') {
-                        Object.keys(uData.produtos).forEach(pId => {
-                            const isUnlocked = uData.produtos[pId] === true;
-                            const key = `${uEmail || uDoc.id}_${pId}`;
-
-                            if (!accessMap.has(key) && isUnlocked) {
-                                accessMap.set(key, {
-                                    id: `${uDoc.id}_${pId}`,
-                                    userId: uDoc.id,
-                                    userEmail: uEmail,
-                                    userName: uName,
-                                    whatsapp: uWhatsapp,
-                                    productId: pId,
-                                    productTitle: productTitlesMap[pId] || pId,
-                                    status: 'unlocked',
-                                    requestedAt: uData.createdAt ? parseFirebaseDate(uData.createdAt) : new Date()
-                                });
-                            }
-                        });
-                    }
-                });
-
-                tbody.innerHTML = '';
-                if (accessMap.size === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum registro de acesso configurado.</td></tr>`;
-                    return;
-                }
-
-                const accessList = Array.from(accessMap.values());
-                accessList.sort((a, b) => b.requestedAt - a.requestedAt);
-
-                accessList.forEach(acc => {
-                    const currentStatus = acc.status || 'locked';
-                    const isUnlocked = currentStatus === 'unlocked';
-                    const cleanWhatsapp = acc.whatsapp ? String(acc.whatsapp).replace(/\D/g, '') : '';
-                    const clientIdentifier = acc.userEmail 
-                        ? `${escapeHtml(acc.userName || 'Cliente')} <br><span style="font-size:0.75rem; color:var(--primary);"><i class="fa-regular fa-envelope"></i> ${escapeHtml(acc.userEmail)}</span>` 
-                        : escapeHtml(acc.userName || acc.userId || 'Utilizador');
-
-                    const safeUserId = escapeJsArg(acc.userId || '');
-                    const safeUserEmail = escapeJsArg(acc.userEmail || '');
-                    const safeProductId = escapeJsArg(acc.productId || '');
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${clientIdentifier}</td>
-                            <td><strong>${escapeHtml(acc.productTitle)}</strong></td>
-                            <td>
-                                ${cleanWhatsapp ? `
-                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
-                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(acc.whatsapp)}
-                                    </a>
-                                ` : '<span style="color:var(--text-muted);">N/A</span>'}
-                            </td>
-                            <td>
-                                <span style="padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; background:${isUnlocked ? 'rgba(16,185,129,0.15); color:var(--success);' : 'rgba(245,158,11,0.15); color:var(--warning);'}">
-                                    ${isUnlocked ? '<i class="fa-solid fa-lock-open"></i> Liberado' : '<span style="color:var(--warning);"><i class="fa-solid fa-lock"></i> Revogado</span>'}
-                                </span>
-                            </td>
-                            <td style="text-align:right;">
-                                <button class="btn-action ${isUnlocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAccess('${acc.id}', '${currentStatus}', '${safeUserId}', '${safeUserEmail}', '${safeProductId}')">
-                                    ${isUnlocked ? 'Revogar Acesso' : 'Liberar Acesso'}
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-            } catch (err) {
-                console.error("Erro ao carregar solicitações de acesso:", err);
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar dados de acesso.</td></tr>`;
-            }
+        // Se não houver nada na tabela user_access, não exibe nenhuma informação
+        if (accessSnap.empty) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum registro encontrado em user_access.</td></tr>`;
+            return;
         }
+
+        const accessList = [];
+
+        accessSnap.forEach(doc => {
+            const acc = doc.data();
+            accessList.push({
+                id: doc.id,
+                userId: acc.userId || '',
+                userEmail: acc.userEmail || acc.email || '',
+                userName: acc.userName || 'Cliente',
+                whatsapp: acc.whatsapp || '',
+                productId: acc.productId || '',
+                productTitle: acc.productTitle || 'Produto Sem Título',
+                status: acc.status || 'locked',
+                requestedAt: acc.requestedAt ? parseFirebaseDate(acc.requestedAt) : new Date()
+            });
+        });
+
+        // Ordenar pelos registros mais recentes da tabela user_access
+        accessList.sort((a, b) => b.requestedAt - a.requestedAt);
+
+        accessList.forEach(acc => {
+            const currentStatus = acc.status || 'locked';
+            const isUnlocked = currentStatus === 'unlocked';
+            const cleanWhatsapp = acc.whatsapp ? String(acc.whatsapp).replace(/\D/g, '') : '';
+            
+            const clientIdentifier = acc.userEmail 
+                ? `${escapeHtml(acc.userName || 'Cliente')} <br><span style="font-size:0.75rem; color:var(--primary);"><i class="fa-regular fa-envelope"></i> ${escapeHtml(acc.userEmail)}</span>` 
+                : escapeHtml(acc.userName || acc.userId || 'Utilizador');
+
+            const safeUserId = escapeJsArg(acc.userId || '');
+            const safeUserEmail = escapeJsArg(acc.userEmail || '');
+            const safeProductId = escapeJsArg(acc.productId || '');
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${clientIdentifier}</td>
+                    <td><strong>${escapeHtml(acc.productTitle)}</strong></td>
+                    <td>
+                        ${cleanWhatsapp ? `
+                            <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(acc.whatsapp)}
+                            </a>
+                        ` : '<span style="color:var(--text-muted);">N/A</span>'}
+                    </td>
+                    <td>
+                        <span style="padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; background:${isUnlocked ? 'rgba(16,185,129,0.15); color:var(--success);' : 'rgba(245,158,11,0.15); color:var(--warning);'}">
+                            ${isUnlocked ? '<i class="fa-solid fa-lock-open"></i> Liberado' : '<span style="color:var(--warning);"><i class="fa-solid fa-lock"></i> Revogado</span>'}
+                        </span>
+                    </td>
+                    <td style="text-align:right;">
+                        <button class="btn-action ${isUnlocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAccess('${acc.id}', '${currentStatus}', '${safeUserId}', '${safeUserEmail}', '${safeProductId}')">
+                            ${isUnlocked ? 'Revogar Acesso' : 'Liberar Acesso'}
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+    } catch (err) {
+        console.error("Erro ao carregar solicitações de acesso:", err);
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar dados de acesso.</td></tr>`;
+    }
+}
 
         async function toggleAccess(id, currentStatus, userId, userEmail, productId) {
             const newStatus = currentStatus === 'unlocked' ? 'locked' : 'unlocked';
@@ -2233,59 +2198,66 @@
                             </td>
                             <td>
                                 ${cleanWhatsapp ? `
-                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:600;">
+                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none; font-size:0.85rem;">
                                         <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(u.whatsapp)}
                                     </a>
                                 ` : '<span style="color:var(--text-muted);">N/A</span>'}
                             </td>
-                            <td><i class="fa-solid fa-location-dot" style="color:var(--info);"></i> ${escapeHtml(u.country)}</td>
+                            <td><span style="font-size:0.82rem;">${escapeHtml(u.country)}</span></td>
                             <td>${productsBadgeHtml}</td>
-                            <td style="font-size:0.8rem; color:var(--text-muted);">${dateStr}</td>
+                            <td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(dateStr)}</td>
                             <td style="text-align:right;">
-                                <div style="display:inline-flex; gap:6px;">
-                                    <button class="btn-action btn-success btn-icon-only" onclick="openGrantModalForUser('${safeEmail}')" title="Gerenciar Acessos por E-mail"><i class="fa-solid fa-key"></i></button>
-                                    <button class="btn-action btn-danger btn-icon-only" onclick="deleteUser('${safeUid}')" title="Excluir Usuário"><i class="fa-solid fa-trash"></i></button>
-                                </div>
+                                <button class="btn-action btn-secondary btn-icon-only" onclick="deleteUser('${safeUid}', '${safeEmail}')" title="Excluir Usuário">
+                                    <i class="fa-solid fa-trash" style="color:#FF4D4D;"></i>
+                                </button>
                             </td>
                         </tr>
                     `;
                 });
 
             } catch (err) {
-                console.error("Erro ao carregar base de usuários:", err);
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar usuários. Verifique as permissões no Firestore.</td></tr>`;
+                console.error("Erro ao carregar usuários:", err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar base de usuários.</td></tr>`;
             }
         }
 
-        function openGrantModalForUser(email) {
-            switchView('access');
-            openGrantAccessModal().then(() => {
-                if (email) {
-                    document.getElementById('grant-email').value = email;
-                    onGrantEmailChange();
-                }
-            });
-        }
-
-        function deleteUser(uid) {
+        function deleteUser(uid, email) {
             Swal.fire({
-                title: 'Excluir Usuário?',
-                text: 'Esta ação irá remover permanentemente o registro deste usuário na coleção "users".',
+                title: 'Excluir registro do Utilizador?',
+                text: `Esta ação irá apagar o registro de ${email || uid} no banco de dados.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#E50914',
                 cancelButtonColor: '#1F1F2C',
-                confirmButtonText: 'Sim, Excluir',
+                confirmButtonText: 'Sim, Apagar',
                 cancelButtonText: 'Cancelar',
                 customClass: { popup: 'swal2-popup-dark', title: 'swal2-title-dark' }
-            }).then((res) => {
-                if (res.isConfirmed) {
-                    db.collection('users').doc(uid).delete().then(() => {
-                        showToast('Usuário removido da base com sucesso.', 'info');
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const batch = db.batch();
+                        
+                        // 1. Apagar da coleção 'users' se existir documento por UID
+                        if (uid) {
+                            const userRef = db.collection('users').doc(uid);
+                            batch.delete(userRef);
+                        }
+
+                        // 2. Apagar vínculos de acesso associados ao e-mail
+                        if (email) {
+                            const accessSnap = await db.collection('user_access').where('userEmail', '==', email).get();
+                            accessSnap.forEach(doc => {
+                                batch.delete(doc.ref);
+                            });
+                        }
+
+                        await batch.commit();
+                        showToast('Registro de usuário removido com sucesso!', 'info');
                         loadUsers();
-                    }).catch(err => {
-                        showToast('Erro ao excluir usuário: ' + err.message, 'warning');
-                    });
+                    } catch (err) {
+                        console.error("Erro ao remover usuário:", err);
+                        showToast('Erro ao apagar utilizador: ' + err.message, 'warning');
+                    }
                 }
             });
         }
