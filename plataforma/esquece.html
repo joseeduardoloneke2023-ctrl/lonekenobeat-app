@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Palavra-passe | Loneke no Beat</title>
+    
+    <!-- Fontes Google & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #0A0A0D;
+            --card-bg: rgba(20, 20, 27, 0.85);
+            --card-border: rgba(255, 255, 255, 0.07);
+            
+            --input-bg: rgba(13, 13, 18, 0.9);
+            --input-border: rgba(255, 255, 255, 0.1);
+            
+            --primary-red: #FF2E3C;
+            --primary-red-hover: #E50914;
+            --red-glow: rgba(255, 46, 60, 0.35);
+
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --text-dark: #64748B;
+            
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            --radius-lg: 20px;
+            --radius-md: 12px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            background-image: 
+                radial-gradient(circle at 50% -10%, rgba(255, 46, 60, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(255, 46, 60, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 0% 50%, rgba(30, 30, 45, 0.5) 0%, transparent 50%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        .recovery-card {
+            width: 100%;
+            max-width: 430px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem 2rem;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8),
+                        0 0 40px rgba(255, 46, 60, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            animation: cardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-logo {
+            font-family: var(--font-heading);
+            font-size: 1.65rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--text-main);
+            display: inline-block;
+            margin-bottom: 0.4rem;
+        }
+
+        .brand-logo span {
+            color: var(--primary-red);
+            text-shadow: 0 0 15px var(--red-glow);
+        }
+
+        .brand-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-top: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.45rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1.1rem;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            padding: 0.9rem 1.1rem 0.9rem 2.8rem;
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 0.92rem;
+            font-family: var(--font-body);
+            transition: var(--transition);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-dark);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-red);
+            box-shadow: 0 0 18px var(--red-glow);
+            background: rgba(18, 18, 25, 0.95);
+        }
+
+        .form-control:focus ~ .input-icon {
+            color: var(--primary-red);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary-red) 0%, #D00010 100%);
+            color: #FFFFFF;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.95rem;
+            font-family: var(--font-body);
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            box-shadow: 0 10px 25px var(--red-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(255, 46, 60, 0.5);
+            filter: brightness(1.1);
+        }
+
+        .back-to-login {
+            text-align: center;
+            margin-top: 1.8rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 0.88rem;
+        }
+
+        .back-to-login a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-to-login a:hover {
+            color: var(--primary-red);
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast-card {
+            background: rgba(18, 18, 24, 0.95);
+            color: var(--text-main);
+            padding: 0.95rem 1.25rem;
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--primary-red);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            font-size: 0.88rem;
+            backdrop-filter: blur(12px);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            max-width: 380px;
+            border-top: 1px solid var(--card-border);
+            border-right: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .toast-card.success { border-left-color: #10B981; }
+        .toast-card.success i { color: #10B981; }
+        .toast-card.error i { color: var(--primary-red); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @media (max-width: 480px) {
+            .recovery-card { padding: 2rem 1.5rem; }
+            .toast-container { right: 15px; left: 15px; top: 15px; }
+            .toast-card { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <main class="recovery-card">
+        <div class="brand-header">
+            <a href="index.html" class="brand-logo">LONEKE NO <span>BEAT</span></a>
+            <p class="brand-subtitle">Insira o seu e-mail cadastrado para receber as instruções de redefinição da palavra-passe.</p>
+        </div>
+
+        <form id="recoveryForm" onsubmit="return false;">
+            <div class="form-group">
+                <label for="recoveryEmail" class="form-label">E-mail Cadastrado</label>
+                <div class="input-wrapper">
+                    <input type="email" id="recoveryEmail" class="form-control" placeholder="seu.email@exemplo.com" required>
+                    <i class="fa-solid fa-envelope input-icon"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnRecoverySubmit">
+                <i class="fa-solid fa-paper-plane"></i> Enviar Link de Recuperação
+            </button>
+        </form>
+
+        <div class="back-to-login">
+            <a href="login.html"><i class="fa-solid fa-arrow-left"></i> Voltar ao Login</a>
+        </div>
+    </main>
+
+    <!-- Script Firebase v10 Modular -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAccxyuNdi_E9Dpz0YPnWZwRC6mBU0AcVo",
+            authDomain: "loneke-site-oficial.firebaseapp.com",
+            projectId: "loneke-site-oficial",
+            storageBucket: "loneke-site-oficial.firebasestorage.app",
+            messagingSenderId: "716824234386",
+            appId: "1:716824234386:web:9bd3a8359ba388eb0dd94b",
+            measurementId: "G-MGJJPNDTM0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        auth.languageCode = 'pt';
+
+        function showToast(message, type = "error") {
+            const container = document.getElementById("toastContainer");
+            const toast = document.createElement("div");
+            toast.className = `toast-card ${type}`;
+            
+            const icon = type === "success" ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-exclamation"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = "fadeOut 0.3s forwards";
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        const recoveryForm = document.getElementById("recoveryForm");
+        const btnSubmit = document.getElementById("btnRecoverySubmit");
+
+        recoveryForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("recoveryEmail").value.trim();
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> A enviar...`;
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showToast(`Enviamos um e-mail para ${email} com o link de recuperação!`, "success");
+                
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-check"></i> Reenviar E-mail`;
+
+            } catch (error) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar Link de Recuperação`;
+
+                if (error.code === 'auth/user-not-found') {
+                    showToast("Nenhuma conta encontrada com este e-mail.");
+                } else if (error.code === 'auth/invalid-email') {
+                    showToast("Por favor, introduza um e-mail válido.");
+                } else {
+                    showToast("Ocorreu um erro ao enviar. Tente novamente.");
+                }
+            }
+        });
+    </script>
+</body>
+</html>

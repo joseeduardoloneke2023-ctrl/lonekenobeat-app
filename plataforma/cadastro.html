@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Conta VIP | Loneke no Beat</title>
+
+    <!-- Fontes Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary: #E50914;
+            --primary-hover: #FF1E27;
+            --primary-glow: rgba(229, 9, 20, 0.4);
+            --bg-body: #050508;
+            --bg-card: rgba(18, 18, 26, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #FFFFFF;
+            --text-muted: #9CA3AF;
+            --radius-md: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0,0,0,0) 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 460px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .brand-header p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-top: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .input-box {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: #FFF;
+            font-size: 0.92rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-box:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: #FFF;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px var(--primary-glow);
+            margin-top: 1rem;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .swal2-popup-dark {
+            background: #0D0D12 !important;
+            border: 1px solid rgba(229, 9, 20, 0.3) !important;
+            border-radius: 20px !important;
+            color: #FFFFFF !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-card">
+        <div class="brand-header">
+            <h1>LONEKE <span style="color:var(--primary);">NO BEAT</span></h1>
+            <p>Crie sua conta para acessar os cursos e produtos VIP</p>
+        </div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" id="reg-name" class="input-box" placeholder="Ex: DJ Manuel" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="reg-email" class="input-box" placeholder="seu@email.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>WhatsApp (com código do país)</label>
+                <input type="tel" id="reg-whatsapp" class="input-box" placeholder="Ex: +244923456789" required>
+            </div>
+
+            <div class="form-group">
+                <label>País</label>
+                <select id="reg-country" class="input-box" style="cursor:pointer;">
+                    <option value="Angola">Angola</option>
+                    <option value="Moçambique">Moçambique</option>
+                    <option value="Portugal">Portugal</option>
+                    <option value="Brasil">Brasil</option>
+                    <option value="Outro">Outro</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="reg-password" class="input-box" placeholder="Mínimo 6 caracteres" required minlength="6">
+            </div>
+
+            <button type="submit" class="btn-submit" id="btnRegister">
+                <i class="fa-solid fa-user-plus"></i> Criar Conta VIP
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Já tem uma conta? <a href="login.html">Fazer Login</a>
+        </div>
+    </div>
+
+    <!-- Script de Autenticação Firebase v10 (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAccxyuNdi_E9Dpz0YPnWZwRC6mBU0AcVo",
+            authDomain: "loneke-site-oficial.firebaseapp.com",
+            projectId: "loneke-site-oficial",
+            storageBucket: "loneke-site-oficial.firebasestorage.app",
+            messagingSenderId: "716824234386",
+            appId: "1:716824234386:web:9bd3a8359ba388eb0dd94b",
+            measurementId: "G-MGJJPNDTM0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const ADMIN_EMAILS = [
+            "lonekenobeat@gmail.com",
+            "admin@loneke.com"
+        ];
+
+        const registerForm = document.getElementById('registerForm');
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const name = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const whatsapp = document.getElementById('reg-whatsapp').value.trim();
+            const country = document.getElementById('reg-country').value;
+            const password = document.getElementById('reg-password').value;
+            const btn = document.getElementById('btnRegister');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> A criar conta...';
+
+            try {
+                // Criar utilizador
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Atualizar Nome de Exibição
+                await updateProfile(user, { displayName: name });
+
+                // Determinar o papel (role)
+                const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+                const role = isAdmin ? "admin" : "client";
+
+                // Guardar no Firestore com a role 'client'
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    name: name,
+                    email: email,
+                    whatsapp: whatsapp,
+                    country: country,
+                    role: role,
+                    createdAt: serverTimestamp()
+                });
+
+                Swal.fire({
+                    title: 'Conta Criada!',
+                    text: 'O seu registo foi realizado com sucesso. Bem-vindo(a)!',
+                    icon: 'success',
+                    confirmButtonColor: '#E50914',
+                    customClass: { popup: 'swal2-popup-dark' }
+                }).then(() => {
+                    if (role === "admin") {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'cliente.html';
+                    }
+                });
+
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Criar Conta VIP';
+
+                let errorMsg = 'Ocorreu um erro ao criar a conta.';
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMsg = 'Este e-mail já está registado no sistema.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMsg = 'A palavra-passe deve ter pelo menos 6 caracteres.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMsg = 'O e-mail digitado é inválido.';
+                }
+
+                Swal.fire({
+                    title: 'Atenção',
+                    text: errorMsg,
+                    icon: 'error',
+                    confirmButtonColor: '#E50914',
+                    customClass: { popup: 'swal2-popup-dark' }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

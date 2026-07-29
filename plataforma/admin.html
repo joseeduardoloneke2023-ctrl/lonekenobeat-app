@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo VIP | Loneke no Beat</title>
+    
+    <!-- Fontes Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons 6.5.1 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- SweetAlert2 CSS e JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Firebase SDK Compat v10.8.0 -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #E50914;
+            --primary-hover: #FF1E27;
+            --primary-glow: rgba(229, 9, 20, 0.45);
+            --success: #10B981;
+            --success-glow: rgba(16, 185, 129, 0.35);
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            
+            --bg-body: #050508;
+            --bg-sidebar: rgba(10, 10, 15, 0.90);
+            --bg-card: rgba(18, 18, 26, 0.70);
+            --bg-card-hover: rgba(28, 28, 40, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-color-glow: rgba(229, 9, 20, 0.4);
+            
+            --text-main: #FFFFFF;
+            --text-muted: #9CA3AF;
+            --sidebar-width: 270px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+            --transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        input, textarea, select {
+            user-select: text;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -250px;
+            left: -200px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0,0,0,0) 70%);
+            z-index: 0;
+            pointer-events: none;
+            animation: pulseGlow 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1) translate(0, 0); opacity: 0.5; }
+            100% { transform: scale(1.2) translate(80px, 50px); opacity: 0.8; }
+        }
+
+        /* PRELOADER */
+        #preloader {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #030305;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
+        }
+
+        #preloader.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: pulseLogo 1.5s infinite alternate;
+        }
+
+        .loader-logo i { color: var(--primary); }
+
+        @keyframes pulseLogo {
+            0% { transform: scale(0.98); opacity: 0.8; }
+            100% { transform: scale(1.05); filter: drop-shadow(0 0 15px var(--primary-glow)); }
+        }
+
+        .loader-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loader-progress {
+            position: absolute;
+            top: 0; left: 0; height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), #FF5555);
+            border-radius: 10px;
+            box-shadow: 0 0 12px var(--primary-glow);
+            transition: width 0.3s ease;
+        }
+
+        /* TOAST NOTIFICATIONS */
+        #toast-container {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            z-index: 10000;
+            display: flex; flex-direction: column; gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            min-width: 300px; max-width: 400px;
+            background: rgba(15, 15, 22, 0.95);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-md);
+            padding: 14px 18px;
+            display: flex; align-items: flex-start; gap: 14px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            transform: translateX(120%);
+            animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            position: relative; overflow: hidden;
+        }
+
+        @keyframes toastIn { to { transform: translateX(0); } }
+        .toast.toast-out { animation: toastOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+
+        .toast-icon { font-size: 1.3rem; margin-top: 2px; }
+        .toast-success .toast-icon { color: var(--success); }
+        .toast-info .toast-icon { color: var(--info); }
+        .toast-warning .toast-icon { color: var(--warning); }
+        .toast-content { flex: 1; }
+        .toast-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }
+        .toast-msg { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+        /* LAYOUT & HEADER */
+        .app-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        #sidebarOverlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 99; display: none; opacity: 0; transition: opacity 0.3s ease;
+        }
+        #sidebarOverlay.active { display: block; opacity: 1; }
+
+        #sidebar {
+            width: var(--sidebar-width); background: var(--bg-sidebar);
+            position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+            padding: 24px 16px; transition: var(--transition);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column; backdrop-filter: blur(25px);
+            overflow-y: auto;
+        }
+
+        .top-navbar {
+            position: fixed; top: 0; right: 0; left: var(--sidebar-width); height: 70px;
+            background: rgba(7, 7, 10, 0.75); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color); z-index: 90;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; transition: var(--transition);
+        }
+
+        .nav-actions { display: flex; align-items: center; gap: 1.2rem; margin-left: auto; }
+
+        .icon-btn {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color);
+            color: var(--text-main); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: var(--transition); position: relative;
+        }
+        .icon-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.2); }
+
+        .main-content {
+            flex: 1; margin-left: var(--sidebar-width); margin-top: 70px;
+            padding: 2.5rem; min-height: calc(100vh - 70px); transition: var(--transition);
+        }
+
+        .logo-area {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 2rem; padding: 12px;
+            background: rgba(229, 9, 20, 0.1); border: 1px solid rgba(229, 9, 20, 0.3);
+            border-radius: var(--radius-md);
+        }
+
+        .avatar-box {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #800000);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #fff; box-shadow: 0 0 15px var(--primary-glow); flex-shrink: 0;
+        }
+
+        .menu-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); font-weight: 700; margin: 1.2rem 0 0.6rem 10px;
+        }
+
+        .menu-item {
+            display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+            color: var(--text-muted); font-size: 0.88rem; font-weight: 500;
+            border-radius: var(--radius-md); cursor: pointer; transition: var(--transition);
+            margin-bottom: 0.3rem; text-decoration: none;
+        }
+        .menu-item i { font-size: 1.1rem; width: 22px; text-align: center; }
+        .menu-item:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.05); transform: translateX(4px); }
+        .menu-item.active {
+            color: var(--text-main);
+            background: linear-gradient(90deg, rgba(229, 9, 20, 0.25) 0%, rgba(229, 9, 20, 0.02) 100%);
+            border-left: 3px solid var(--primary); font-weight: 600;
+        }
+        .menu-item.active i { color: var(--primary); filter: drop-shadow(0 0 8px var(--primary-glow)); }
+
+        .panel-view { display: none; opacity: 0; transform: translateY(20px); }
+        .panel-view.active { display: block; animation: viewEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes viewEntrance { to { opacity: 1; transform: translateY(0); } }
+
+        .view-title {
+            font-family: 'Montserrat', sans-serif; font-size: 1.8rem; font-weight: 800;
+            margin-bottom: 0.4rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px;
+        }
+
+        .form-label {
+            font-size: 0.8rem; font-weight: 700; color: var(--text-muted);
+            margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .search-input {
+            width: 100%; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 12px 16px; color: var(--text-main);
+            font-family: inherit; font-size: 0.9rem; outline: none; transition: var(--transition);
+        }
+        .search-input:focus { border-color: var(--primary); background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 20px var(--primary-glow); }
+        select.search-input option { background: #0D0D12; color: #FFF; padding: 10px; }
+
+        .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            padding: 1.5rem; display: flex; align-items: center; gap: 20px; transition: var(--transition); backdrop-filter: blur(12px);
+        }
+        .stat-card:hover { transform: translateY(-6px); border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        .stat-icon { width: 55px; height: 55px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .stat-info h3 { font-size: 1.8rem; font-family: 'Montserrat', sans-serif; font-weight: 800; line-height: 1.2; }
+        .stat-info p { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+
+        .table-container {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            overflow-x: auto; backdrop-filter: blur(12px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+        .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .admin-table th { background: rgba(255, 255, 255, 0.03); padding: 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .admin-table td { padding: 16px; font-size: 0.88rem; border-bottom: 1px solid rgba(255, 255, 255, 0.03); vertical-align: middle; }
+        .admin-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+        .btn-action {
+            padding: 10px 18px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.82rem;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: var(--transition); border: none; text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: #FFF; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 20px var(--primary-glow); }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: #FFF; border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+        .btn-danger { background: rgba(229,9,20,0.15); color: #FF4D4D; border: 1px solid rgba(229,9,20,0.3); }
+        .btn-danger:hover { background: var(--primary); color: #FFF; }
+        .btn-success { background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .btn-success:hover { background: var(--success); color: #FFF; }
+        .btn-warning { background: rgba(245, 158, 11, 0.2); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .btn-warning:hover { background: var(--warning); color: #000; }
+        .btn-icon-only { width: 36px; height: 36px; padding: 0; border-radius: var(--radius-sm); }
+
+        /* BADGES CATEGORIA E ESTADOS */
+        .cat-badge {
+            display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: #FFF;
+        }
+
+        /* PREÇOS */
+        .price-box { display: flex; flex-direction: column; gap: 2px; }
+        .price-old { font-size: 0.75rem; color: #FF6B6B; text-decoration: line-through; opacity: 0.8; font-weight: 600; }
+        .price-new { font-size: 0.92rem; color: var(--success); font-weight: 800; }
+
+        /* CHAT SYSTEM */
+        .chat-layout { display: grid; grid-template-columns: 320px 1fr; height: 72vh; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; backdrop-filter: blur(12px); }
+        .chat-sidebar { border-right: 1px solid var(--border-color); overflow-y: auto; background: rgba(0,0,0,0.2); }
+        .chat-user-item { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; transition: var(--transition); display: flex; gap: 12px; align-items: center; }
+        .chat-user-item:hover, .chat-user-item.active { background: rgba(229, 9, 20, 0.12); border-left: 3px solid var(--primary); }
+        .chat-main-area { display: flex; flex-direction: column; background: #060609; }
+        .chat-header-bar { padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-weight: 700; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; }
+        .chat-messages-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .chat-input-bar { padding: 16px 20px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; background: rgba(255,255,255,0.02); }
+
+        /* SWEETALERT DARK */
+        .swal2-popup-dark {
+            background: #0D0D12 !important; border: 1px solid rgba(229, 9, 20, 0.3) !important;
+            border-radius: 20px !important; color: #FFFFFF !important; backdrop-filter: blur(20px);
+        }
+        .swal2-title-dark { font-family: 'Montserrat', sans-serif !important; font-weight: 800 !important; }
+
+        /* LISTA DE CHECKBOX PRODUTOS */
+        .product-checkbox-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); cursor: pointer; transition: var(--transition);
+        }
+        .product-checkbox-item:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255,255,255,0.2); }
+        .product-checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
+        @media (max-width: 1024px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            .top-navbar { left: 0; }
+            .main-content { margin-left: 0; padding: 1.5rem; }
+            #menuToggle { display: flex !important; }
+            .chat-layout { grid-template-columns: 1fr; height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+    <!-- PRELOADER -->
+    <div id="preloader">
+        <div class="loader-logo">
+            <i class="fa-solid fa-shield-halved fa-spin"></i> LONEKE <span style="color:var(--primary);">ADMIN</span>
+        </div>
+        <div class="loader-bar">
+            <div class="loader-progress" id="loaderProgress"></div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <div class="app-container">
+
+        <!-- TOP NAVBAR -->
+        <header class="top-navbar">
+            <button class="icon-btn" id="menuToggle" style="display:none;" onclick="toggleSidebar(true)">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="nav-actions">
+                <button class="icon-btn" onclick="showToast('Banco Firebase Conectado em Tempo Real.', 'success', 'Conexão OK')">
+                    <i class="fa-solid fa-server" style="color:var(--success);"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar">
+            <div class="logo-area">
+                <div class="avatar-box"><i class="fa-solid fa-user-shield"></i></div>
+                <div style="display:flex; flex-direction:column; overflow:hidden;">
+                    <span style="font-weight:700; font-size:0.95rem;">Painel Admin</span>
+                    <span style="color:var(--primary); font-size:0.75rem; font-weight:700;" id="adminEmailDisplay">ADMINISTRADOR</span>
+                </div>
+            </div>
+            
+            <div class="menu-label">Gestão Global</div>
+            <div class="menu-item active" onclick="switchView('dashboard', this)">
+                <i class="fa-solid fa-chart-pie"></i> Dashboard & KPIs
+            </div>
+            <div class="menu-item" onclick="switchView('pending-sales', this)">
+                <i class="fa-solid fa-clock-rotate-left"></i> Vendas Pendentes (Checkout)
+            </div>
+            <div class="menu-item" onclick="switchView('products', this)">
+                <i class="fa-solid fa-box-archive"></i> Produtos & Beats
+            </div>
+            <div class="menu-item" onclick="switchView('access', this)">
+                <i class="fa-solid fa-key"></i> Acessos & Permissões por E-mail
+            </div>
+            <div class="menu-item" onclick="switchView('chat', this)">
+                <i class="fa-solid fa-comments"></i> Suporte Chat
+            </div>
+            <div class="menu-item" onclick="switchView('users', this)">
+                <i class="fa-solid fa-users"></i> Base de Usuários
+            </div>
+
+            <div class="menu-item" onclick="logoutAdmin()" style="margin-top:auto; color:#FF4D4D; border-top:1px solid var(--border-color); padding-top:1.2rem;">
+                <i class="fa-solid fa-right-from-bracket"></i> Terminar Sessão
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- 1. DASHBOARD VIEW -->
+            <section id="view-dashboard" class="panel-view active">
+                <h2 class="view-title"><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> Dashboard de Faturamento</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Acompanhe o desempenho das suas vendas e métricas em tempo real.</p>
+
+                <!-- Filtros de Faturamento -->
+                <div style="display:flex; gap:10px; margin-bottom: 2rem; flex-wrap:wrap;">
+                    <button class="btn-action btn-primary" onclick="filterBilling('day', this)">Diário</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('week', this)">Semanal</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('month', this)">Mensal</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('semester', this)">Semestral</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('year', this)">Anual</button>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:var(--primary); background:rgba(229,9,20,0.1);"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-revenue">0 Kz</h3>
+                            <p>Faturamento no Período</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:var(--success); background:rgba(16,185,129,0.1);"><i class="fa-solid fa-cart-shopping"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-sales">0</h3>
+                            <p>Vendas Concluídas</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#FFAA00; background:rgba(255,170,0,0.1);"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-users">0</h3>
+                            <p>Total de Usuários</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. NOVO: VIEW DE VENDAS E PRODUTOS PENDENTES DO CHECKOUT -->
+            <section id="view-pending-sales" class="panel-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> Vendas Pendentes (Checkout)</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Visualize as compras pendentes do <code>checkout.html</code> e autorize/libere o produto para cada e-mail.</p>
+                    </div>
+                    <button class="btn-action btn-secondary" onclick="loadPendingSales()">
+                        <i class="fa-solid fa-arrows-rotate"></i> Atualizar Lista
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>E-mail do Cliente</th>
+                                <th>Produto Solicitado</th>
+                                <th>Valor (Kz)</th>
+                                <th>Comprovativo / Ref.</th>
+                                <th>Estado</th>
+                                <th style="text-align:right;">Autorização / Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pending-sales-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 3. PRODUCTS VIEW -->
+            <section id="view-products" class="panel-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-box-archive" style="color:var(--primary);"></i> Catálogo de Produtos e Beats</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Gerencie o catálogo VIP, preços, detalhes e links de checkout.</p>
+                    </div>
+                    <button class="btn-action btn-primary" onclick="openProductModal()"><i class="fa-solid fa-plus-circle"></i> Cadastrar Novo Produto</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">Capa</th>
+                                <th>Título / Slug</th>
+                                <th>Categoria</th>
+                                <th>Preços (Antigo / Atual)</th>
+                                <th>Vendas</th>
+                                <th>Destaque</th>
+                                <th style="text-align:right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 4. ACCESS & ORDERS VIEW -->
+            <section id="view-access" class="panel-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Liberação de Acesso por Perfil</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Escolha um e-mail cadastrado e selecione quais produtos aquele perfil poderá acessar ao entrar no site.</p>
+                    </div>
+                    <button class="btn-action btn-success" onclick="openGrantAccessModal()">
+                        <i class="fa-solid fa-user-check"></i> Liberar Acesso por E-mail
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente / E-mail</th>
+                                <th>Produto Liberado</th>
+                                <th>WhatsApp</th>
+                                <th>Estado do Acesso</th>
+                                <th style="text-align:right;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="access-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 5. CHAT SUPPORT VIEW -->
+            <section id="view-chat" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-comments" style="color:var(--primary);"></i> Central de Suporte Chat</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 1.5rem;">Atenda os alunos e visualize seus e-mails de cadastro para suporte direto.</p>
+
+                <div class="chat-layout">
+                    <div class="chat-sidebar" id="chat-users-list">
+                        <!-- Lista de chats via Firebase -->
+                    </div>
+                    <div class="chat-main-area">
+                        <div id="chat-header" class="chat-header-bar">Selecione um aluno</div>
+                        <div id="chat-messages" class="chat-messages-box">
+                            <p style="color:var(--text-muted); text-align:center; margin-top:auto; margin-bottom:auto;">Nenhuma conversa selecionada no momento.</p>
+                        </div>
+                        <div class="chat-input-bar">
+                            <input type="text" id="chat-input" class="search-input" placeholder="Escreva uma resposta para o aluno..." onkeydown="if(event.key==='Enter') sendAdminMessage()">
+                            <button class="btn-action btn-primary" onclick="sendAdminMessage()"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. USERS VIEW -->
+            <section id="view-users" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Base de Usuários Cadastrados</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Lista completa de contas registadas no sistema.</p>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>WhatsApp</th>
+                                <th>País</th>
+                                <th style="text-align:right;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: LIBERAR ACESSO A PRODUTOS POR E-MAIL -->
+    <div id="grant-access-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
+        <div style="background:#0B0B10; border:1px solid var(--border-color); border-radius:24px; width:100%; max-width:620px; max-height:90vh; overflow-y:auto; padding:2rem; box-shadow:0 30px 60px rgba(0,0,0,0.95);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
+                <h3 style="font-family:'Montserrat',sans-serif; font-size:1.25rem; font-weight:800; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-unlock-keyhole" style="color:var(--success);"></i> <span>Liberar Produtos para E-mail</span>
+                </h3>
+                <button onclick="closeGrantAccessModal()" class="icon-btn" style="width:32px; height:32px; border:none; background:rgba(255,255,255,0.05);"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                <!-- E-mail do Cliente -->
+                <div>
+                    <label class="form-label"><i class="fa-regular fa-envelope" style="color:var(--primary);"></i> Escolha ou Digite o E-mail da Conta</label>
+                    <input type="email" id="grant-email" class="search-input" placeholder="exemplo@cliente.com" list="registered-emails-list" oninput="onGrantEmailChange()" onchange="onGrantEmailChange()">
+                    <datalist id="registered-emails-list"></datalist>
+                    <span style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; display:block;">Selecione um e-mail para ver e alterar os produtos que este perfil pode acessar.</span>
+                </div>
+
+                <!-- Lista de Produtos para Selecionar -->
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="form-label" style="margin:0;"><i class="fa-solid fa-box-open" style="color:var(--info);"></i> Selecione os Produtos Permitidos</label>
+                        <button type="button" class="btn-action btn-secondary" onclick="toggleSelectAllGrantProducts()" style="font-size:0.75rem; padding:4px 10px;">Marcar/Desmarcar Todos</button>
+                    </div>
+                    
+                    <div id="grant-products-list" style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; padding-right:6px;">
+                        <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">Carregando produtos...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2rem; border-top:1px solid var(--border-color); padding-top:1.2rem;">
+                <button class="btn-action btn-secondary" onclick="closeGrantAccessModal()">Cancelar</button>
+                <button class="btn-action btn-success" id="btn-grant-access" onclick="submitGrantAccess()">
+                    <i class="fa-solid fa-check-double"></i> Confirmar & Salvar Permissões
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRODUCT MODAL -->
+    <div id="product-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
+        <div style="background:#0B0B10; border:1px solid var(--border-color); border-radius:24px; width:100%; max-width:760px; max-height:92vh; overflow-y:auto; padding:2rem; box-shadow:0 30px 60px rgba(0,0,0,0.95);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
+                <h3 style="font-family:'Montserrat',sans-serif; font-size:1.3rem; font-weight:800; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-box-archive" style="color:var(--primary);"></i> <span id="modal-title-text">Cadastrar Novo Produto</span>
+                </h3>
+                <button onclick="closeProductModal()" class="icon-btn" style="width:32px; height:32px; border:none; background:rgba(255,255,255,0.05);"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                
+                <!-- Título e Categoria -->
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1rem;">
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-heading" style="color:var(--primary);"></i> Título do Produto (`titulo`)</label>
+                        <input type="text" id="p-titulo" class="search-input" placeholder="Ex: FLP MORENA - PROD. LONEKE NO BEAT" oninput="generateSlugPreview()">
+                    </div>
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Categoria (`categoria`)</label>
+                        <select id="p-categoria" class="search-input" style="cursor:pointer;" onchange="toggleCursosSection()">
+                            <option value="beats" selected>beats</option>
+                            <option value="drumkits">drumkits</option>
+                            <option value="plugins">plugins</option>
+                            <option value="cursos">cursos</option>
+                            <option value="flp">flp</option>
+                            <option value="ebooks">ebooks</option>
+                            <option value="loop kit">loop kit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Seção Dinâmica de Módulos e Aulas (Ativada apenas quando Categoria = cursos) -->
+                <div id="cursos-section" style="display:none; background:rgba(255,255,255,0.02); padding:1.2rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                        <label class="form-label" style="margin:0; color:var(--primary); font-size:0.85rem;"><i class="fa-solid fa-graduation-cap"></i> Módulos e Aulas do Curso</label>
+                        <button type="button" class="btn-action btn-secondary" onclick="addModuloUI()" style="font-size:0.75rem; padding:6px 12px;"><i class="fa-solid fa-plus"></i> Adicionar Módulo</button>
+                    </div>
+                    <div id="modulos-list" style="display:flex; flex-direction:column; gap:1rem;">
+                        <!-- Módulos e Aulas serão renderizados aqui via JS -->
+                    </div>
+                </div>
+
+                <!-- Slug automático e Vendas Iniciais -->
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1rem;">
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-link" style="color:var(--info);"></i> Slug do Produto (`slug`)</label>
+                        <input type="text" id="p-slug" class="search-input" placeholder="flp-semba-morena">
+                    </div>
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-fire" style="color:var(--warning);"></i> Qtd. Vendas (`vendas`)</label>
+                        <input type="number" id="p-vendas" class="search-input" value="0" placeholder="0">
+                    </div>
+                </div>
+
+                <!-- Preços: Antigo e Atual -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; background:rgba(255,255,255,0.02); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                    <div>
+                        <label class="form-label" style="color:#FF6B6B;"><i class="fa-solid fa-tag"></i> Preço Antigo (`precoAntigo`)</label>
+                        <input type="number" id="p-precoAntigo" class="search-input" placeholder="Ex: 3000">
+                    </div>
+                    <div>
+                        <label class="form-label" style="color:var(--success);"><i class="fa-solid fa-bolt"></i> Preço Atual (`precoAtual`)</label>
+                        <input type="number" id="p-precoAtual" class="search-input" placeholder="Ex: 500">
+                    </div>
+                </div>
+
+                <!-- Links de Checkout, Vídeo e Material do Curso -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:1rem;">
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-cart-shopping" style="color:var(--success);"></i> Link Checkout (`linkCheckout`)</label>
+                        <input type="text" id="p-linkCheckout" class="search-input" placeholder="https://paygooo.goootrafego.com/checkout/...">
+                    </div>
+                    <div>
+                        <label class="form-label"><i class="fa-brands fa-youtube" style="color:#FF0000;"></i> Link Vídeo (`videoLink`)</label>
+                        <input type="text" id="p-videoLink" class="search-input" placeholder="https://youtu.be/u1-_DwlJALg">
+                    </div>
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-file-arrow-down" style="color:var(--info);"></i> Material do Curso (`linkMaterial`)</label>
+                        <input type="text" id="p-linkMaterial" class="search-input" placeholder="https://drive.google.com/file/d/...">
+                    </div>
+                </div>
+
+                <!-- Configuração de Destaque -->
+                <div style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                    <label class="form-label"><i class="fa-solid fa-star" style="color:#FFD700;"></i> Produto Destaque (`destaque`)</label>
+                    <select id="p-destaque" class="search-input" style="cursor:pointer;">
+                        <option value="true">Sim (Destaque Ativo)</option>
+                        <option value="false" selected>Não</option>
+                    </select>
+                </div>
+
+                <!-- Descrição -->
+                <div>
+                    <label class="form-label"><i class="fa-solid fa-align-left" style="color:var(--primary);"></i> Descrição (`descricao`)</label>
+                    <textarea id="p-descricao" class="search-input" placeholder="Descubra os segredos de programação e groove de um Semba tradicional..." style="height:75px; resize:none;"></textarea>
+                </div>
+                
+                <!-- Imagem do Produto -->
+                <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+                    <label class="form-label"><i class="fa-solid fa-image" style="color:var(--primary);"></i> Caminho ou URL da Imagem (`imagem`)</label>
+                    <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1rem; margin-bottom:8px;">
+                        <input type="text" id="p-imagem-url" class="search-input" placeholder="img/prontos/FLP SEMBA MORENA.jpg ou URL" oninput="previewImageUrl()">
+                        <input type="file" id="p-imagem-file" class="search-input" accept="image/*" style="padding: 8px 12px; cursor:pointer;" onchange="previewImageFile(event)">
+                    </div>
+                    <div id="img-preview-container" style="display:none; align-items:center; gap:12px; margin-top:8px; background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:8px;">
+                        <img id="img-preview" src="" alt="Preview" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                        <span style="font-size:0.8rem; color:var(--text-muted);" id="img-preview-info">Pré-visualização da Capa</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2rem; border-top:1px solid var(--border-color); padding-top:1.2rem;">
+                <button class="btn-action btn-secondary" onclick="closeProductModal()">Cancelar</button>
+                <button class="btn-action btn-primary" id="btn-save-product" onclick="saveProduct()"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar no Banco de Dados</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL E INTEGRAÇÃO FIREBASE -->
+    <script>
+        // ==========================================
+        // 1. CONFIGURAÇÃO DO FIREBASE
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAccxyuNdi_E9Dpz0YPnWZwRC6mBU0AcVo",
+            authDomain: "loneke-site-oficial.firebaseapp.com",
+            projectId: "loneke-site-oficial",
+            storageBucket: "loneke-site-oficial.firebasestorage.app",
+            messagingSenderId: "716824234386",
+            appId: "1:716824234386:web:9bd3a8359ba388eb0dd94b",
+            measurementId: "G-MGJJPNDTM0"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+
+        let editingProductId = null; 
+        let activeChatUserId = null;
+        let unsubscribeDashboard = null;
+        let unsubscribePendingSales = null;
+        let unsubscribeProducts = null;
+        let unsubscribeAccess = null;
+        let unsubscribeUsers = null;
+        let unsubscribeChatList = null;
+        let unsubscribeChatMessages = null;
+
+        // ==========================================
+        // 2. AUTENTICAÇÃO
+        // ==========================================
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                document.getElementById('adminEmailDisplay').innerText = user.email || 'ADMINISTRADOR';
+                switchView('dashboard');
+            }
+        });
+
+        // ==========================================
+        // 3. UTILITÁRIOS E UI CONTROL
+        // ==========================================
+        window.addEventListener('load', () => {
+            const loaderProgress = document.getElementById('loaderProgress');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 25;
+                loaderProgress.style.width = `${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        const preloader = document.getElementById('preloader');
+                        if (preloader) preloader.classList.add('fade-out');
+                    }, 300);
+                }
+            }, 80);
+        });
+
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (open) {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+            } else {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function showToast(message, type = 'info', title = '') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icons = { success: 'fa-circle-check', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
+            const titles = { success: 'Sucesso', info: 'Informação', warning: 'Atenção' };
+
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || 'fa-circle-info'} toast-icon"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${title || titles[type] || 'Notificação'}</div>
+                    <div class="toast-msg">${escapeHtml(message)}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('toast-out');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function escapeJsArg(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"');
+        }
+
+        function switchView(tabId, menuElement) {
+            toggleSidebar(false);
+            if (menuElement) {
+                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                menuElement.classList.add('active');
+            }
+
+            document.querySelectorAll('.panel-view').forEach(view => view.classList.remove('active'));
+            const targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+
+            if (tabId === 'dashboard') loadDashboardData('day');
+            if (tabId === 'pending-sales') loadPendingSales();
+            if (tabId === 'products') loadProducts();
+            if (tabId === 'access') loadAccessRequests();
+            if (tabId === 'chat') loadChatUsers();
+            if (tabId === 'users') loadUsers();
+        }
+
+        function logoutAdmin() {
+            Swal.fire({
+                title: 'Terminar Sessão?',
+                text: 'Deseja sair do painel administrativo?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#E50914',
+                cancelButtonColor: '#1F1F2C',
+                confirmButtonText: 'Sim, Sair',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'swal2-popup-dark', title: 'swal2-title-dark' }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    auth.signOut().then(() => {
+                        window.location.href = 'login.html';
+                    });
+                }
+            });
+        }
+
+        function generateSlugPreview() {
+            const titulo = document.getElementById('p-titulo').value;
+            const slugInput = document.getElementById('p-slug');
+            slugInput.value = titulo.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)+/g, '');
+        }
+
+        // ==========================================
+        // 4. MÓDULOS E AULAS (DINÂMICO PARA CURSOS)
+        // ==========================================
+        function toggleCursosSection() {
+            const cat = document.getElementById('p-categoria').value;
+            const container = document.getElementById('cursos-section');
+            if (cat === 'cursos') {
+                container.style.display = 'block';
+                if (document.querySelectorAll('.modulo-card').length === 0) {
+                    addModuloUI();
+                }
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function addModuloUI(nomeModulo = '', aulas = []) {
+            const list = document.getElementById('modulos-list');
+            const moduloId = 'mod_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            
+            const card = document.createElement('div');
+            card.className = 'modulo-card';
+            card.setAttribute('data-id', moduloId);
+            card.style.cssText = 'background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); padding: 1rem; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.8rem;';
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <input type="text" class="search-input modulo-titulo" placeholder="Nome do Módulo (ex: Módulo 1 - Introdução)" value="${escapeHtml(nomeModulo)}" style="font-weight: 700;">
+                    <button type="button" class="btn-action btn-danger btn-icon-only" onclick="this.closest('.modulo-card').remove()" title="Remover Módulo"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                
+                <div class="aulas-list" style="display: flex; flex-direction: column; gap: 0.6rem; padding-left: 0.5rem; border-left: 2px solid rgba(229,9,20,0.4);"></div>
+
+                <div style="display: flex; justify-content: flex-start; margin-top: 4px;">
+                    <button type="button" class="btn-action btn-secondary" onclick="addAulaUI('${moduloId}')" style="font-size:0.75rem; padding: 6px 12px;">
+                        <i class="fa-solid fa-plus-circle" style="color:var(--success);"></i> Adicionar Aula
+                    </button>
+                </div>
+            `;
+
+            list.appendChild(card);
+
+            if (aulas && aulas.length > 0) {
+                aulas.forEach(a => addAulaUI(moduloId, a.titulo, a.youtubeUrl));
+            } else {
+                addAulaUI(moduloId);
+            }
+        }
+
+        function addAulaUI(moduloId, tituloAula = '', urlAula = '') {
+            const moduloCard = document.querySelector(`.modulo-card[data-id="${moduloId}"]`);
+            if (!moduloCard) return;
+
+            const aulasList = moduloCard.querySelector('.aulas-list');
+            const aulaRow = document.createElement('div');
+            aulaRow.className = 'aula-row';
+            aulaRow.style.cssText = 'display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 8px; align-items: center;';
+
+            aulaRow.innerHTML = `
+                <input type="text" class="search-input aula-titulo" placeholder="Nome da Aula" value="${escapeHtml(tituloAula)}" style="font-size:0.82rem; padding: 8px 12px;">
+                <input type="text" class="search-input aula-url" placeholder="Link do YouTube (https://...)" value="${escapeHtml(urlAula)}" style="font-size:0.82rem; padding: 8px 12px;">
+                <button type="button" class="btn-action btn-danger btn-icon-only" onclick="this.closest('.aula-row').remove()" title="Remover Aula" style="width:32px; height:32px;"><i class="fa-solid fa-xmark"></i></button>
+            `;
+
+            aulasList.appendChild(aulaRow);
+        }
+
+        function getModulosData() {
+            const modulos = [];
+            const moduloCards = document.querySelectorAll('.modulo-card');
+
+            moduloCards.forEach(card => {
+                const tituloInput = card.querySelector('.modulo-titulo');
+                const titulo = tituloInput ? tituloInput.value.trim() : '';
+                const aulaRows = card.querySelectorAll('.aula-row');
+                const aulas = [];
+
+                aulaRows.forEach(row => {
+                    const aulaTituloInput = row.querySelector('.aula-titulo');
+                    const aulaUrlInput = row.querySelector('.aula-url');
+                    const aulaTitulo = aulaTituloInput ? aulaTituloInput.value.trim() : '';
+                    const aulaUrl = aulaUrlInput ? aulaUrlInput.value.trim() : '';
+                    if (aulaTitulo || aulaUrl) {
+                        aulas.push({
+                            titulo: aulaTitulo,
+                            youtubeUrl: aulaUrl
+                        });
+                    }
+                });
+
+                if (titulo || aulas.length > 0) {
+                    modulos.push({
+                        nome: titulo,
+                        aulas: aulas
+                    });
+                }
+            });
+
+            return modulos;
+        }
+
+        // ==========================================
+        // 5. PREVIEW DE IMAGENS E MODAL PRODUTOS
+        // ==========================================
+        function previewImageUrl() {
+            const url = document.getElementById('p-imagem-url').value.trim();
+            const container = document.getElementById('img-preview-container');
+            const img = document.getElementById('img-preview');
+            
+            if (url) {
+                img.src = url;
+                container.style.display = 'flex';
+                document.getElementById('p-imagem-file').value = '';
+            } else if (!document.getElementById('p-imagem-file').files.length) {
+                container.style.display = 'none';
+            }
+        }
+
+        function previewImageFile(event) {
+            const file = event.target.files[0];
+            const container = document.getElementById('img-preview-container');
+            const img = document.getElementById('img-preview');
+
+            if (file) {
+                img.src = URL.createObjectURL(file);
+                container.style.display = 'flex';
+                document.getElementById('p-imagem-url').value = '';
+            } else {
+                previewImageUrl();
+            }
+        }
+
+        function openProductModal() { 
+            resetProductModal();
+            document.getElementById('modal-title-text').innerText = 'Cadastrar Novo Produto';
+            document.getElementById('product-modal').style.display = 'flex'; 
+        }
+
+        function closeProductModal() { 
+            document.getElementById('product-modal').style.display = 'none'; 
+            resetProductModal();
+        }
+
+        function resetProductModal() {
+            editingProductId = null;
+            document.getElementById('modal-title-text').innerText = 'Cadastrar Novo Produto';
+            document.getElementById('p-titulo').value = '';
+            document.getElementById('p-categoria').value = 'beats';
+            document.getElementById('p-slug').value = '';
+            document.getElementById('p-vendas').value = '0';
+            document.getElementById('p-precoAntigo').value = '';
+            document.getElementById('p-precoAtual').value = '';
+            document.getElementById('p-linkCheckout').value = '';
+            document.getElementById('p-videoLink').value = '';
+            document.getElementById('p-linkMaterial').value = '';
+            document.getElementById('p-destaque').value = 'false';
+            document.getElementById('p-descricao').value = '';
+            document.getElementById('p-imagem-url').value = '';
+            document.getElementById('p-imagem-file').value = '';
+            document.getElementById('img-preview-container').style.display = 'none';
+            document.getElementById('modulos-list').innerHTML = '';
+            document.getElementById('cursos-section').style.display = 'none';
+        }
+
+        // ==========================================
+        // 6. CARREGAR PRODUTO PARA EDIÇÃO
+        // ==========================================
+        async function editProduct(id) {
+            try {
+                const doc = await db.collection('produtos').doc(id).get();
+                if (!doc.exists) {
+                    showToast('Produto não encontrado.', 'warning');
+                    return;
+                }
+
+                const p = doc.data();
+                editingProductId = id;
+
+                document.getElementById('modal-title-text').innerText = 'Editar Produto';
+
+                document.getElementById('p-titulo').value = p.titulo || '';
+                document.getElementById('p-categoria').value = p.categoria || 'beats';
+                document.getElementById('p-slug').value = p.slug || '';
+                document.getElementById('p-vendas').value = p.vendas || 0;
+                document.getElementById('p-precoAntigo').value = p.precoAntigo || '';
+                document.getElementById('p-precoAtual').value = p.precoAtual || '';
+                document.getElementById('p-linkCheckout').value = p.linkCheckout || '';
+                document.getElementById('p-videoLink').value = p.videoLink || '';
+                document.getElementById('p-linkMaterial').value = p.linkMaterial || '';
+                document.getElementById('p-destaque').value = String(p.destaque === true);
+                document.getElementById('p-descricao').value = p.descricao || '';
+                document.getElementById('p-imagem-url').value = p.imagem || '';
+
+                if (p.imagem) {
+                    document.getElementById('img-preview').src = p.imagem;
+                    document.getElementById('img-preview-container').style.display = 'flex';
+                } else {
+                    document.getElementById('img-preview-container').style.display = 'none';
+                }
+
+                toggleCursosSection();
+                document.getElementById('modulos-list').innerHTML = '';
+                if (p.categoria === 'cursos' && Array.isArray(p.modulos) && p.modulos.length > 0) {
+                    p.modulos.forEach(mod => {
+                        addModuloUI(mod.nome || '', mod.aulas || []);
+                    });
+                } else if (p.categoria === 'cursos') {
+                    addModuloUI();
+                }
+
+                document.getElementById('product-modal').style.display = 'flex';
+            } catch (err) {
+                console.error("Erro ao abrir edição:", err);
+                showToast("Erro ao carregar produto para edição: " + err.message, "warning");
+            }
+        }
+
+        // ==========================================
+        // 7. SALVAR/ATUALIZAR PRODUTO NO FIREBASE
+        // ==========================================
+        async function saveProduct() {
+            const titulo = document.getElementById('p-titulo').value.trim();
+            const categoria = document.getElementById('p-categoria').value.trim();
+            const slug = document.getElementById('p-slug').value.trim();
+            const vendas = Number(document.getElementById('p-vendas').value || 0);
+            const precoAntigo = Number(document.getElementById('p-precoAntigo').value || 0);
+            const precoAtual = Number(document.getElementById('p-precoAtual').value || 0);
+            const linkCheckout = document.getElementById('p-linkCheckout').value.trim();
+            const videoLink = document.getElementById('p-videoLink').value.trim();
+            const linkMaterial = document.getElementById('p-linkMaterial').value.trim();
+            const destaque = document.getElementById('p-destaque').value === 'true';
+            const descricao = document.getElementById('p-descricao').value.trim();
+            
+            const imageUrlInput = document.getElementById('p-imagem-url').value.trim();
+            const imageFileInput = document.getElementById('p-imagem-file').files[0];
+
+            if (!titulo) {
+                showToast('Preencha o título do produto.', 'warning');
+                return;
+            }
+            if (isNaN(precoAtual) || precoAtual < 0) {
+                showToast('Preencha um preço atual válido para o produto.', 'warning');
+                return;
+            }
+
+            const modulosData = (categoria === 'cursos') ? getModulosData() : [];
+
+            const btnSave = document.getElementById('btn-save-product');
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+
+            try {
+                let finalImageUrl = imageUrlInput;
+                if (imageFileInput) {
+                    btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando Imagem...';
+                    const fileRef = storage.ref(`products/${Date.now()}_${imageFileInput.name}`);
+                    const uploadTask = await fileRef.put(imageFileInput);
+                    finalImageUrl = await uploadTask.ref.getDownloadURL();
+                }
+
+                const productData = {
+                    slug: slug || titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                    titulo: titulo,
+                    categoria: categoria || "beats",
+                    descricao: descricao,
+                    imagem: finalImageUrl || "",
+                    precoAntigo: precoAntigo,
+                    precoAtual: precoAtual,
+                    vendas: vendas,
+                    linkCheckout: linkCheckout,
+                    videoLink: videoLink,
+                    linkMaterial: linkMaterial,
+                    destaque: destaque,
+                    modulos: modulosData,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (editingProductId) {
+                    await db.collection('produtos').doc(editingProductId).update(productData);
+                    showToast('Produto atualizado com sucesso!', 'success');
+                } else {
+                    const newDocRef = db.collection('produtos').doc();
+                    const nowTimestamp = Date.now();
+                    productData.id = nowTimestamp;
+                    productData.uuid = newDocRef.id;
+                    productData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+
+                    await newDocRef.set(productData);
+                    showToast('Produto cadastrado com sucesso!', 'success');
+                }
+
+                closeProductModal();
+            } catch (err) {
+                console.error("Erro ao salvar produto:", err);
+                if (err.code === 'permission-denied') {
+                    showToast('Permissão negada. Atualize as Regras de Segurança no Firebase Console.', 'warning', 'Erro de Permissão');
+                } else {
+                    showToast('Erro ao salvar: ' + err.message, 'warning');
+                }
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Salvar no Banco de Dados';
+            }
+        }
+
+        // ==========================================
+        // 8. DASHBOARD E FATURAMENTO
+        // ==========================================
+        function filterBilling(period, btn) {
+            document.querySelectorAll('#view-dashboard button').forEach(b => b.className = "btn-action btn-secondary");
+            if (btn) btn.className = "btn-action btn-primary";
+            loadDashboardData(period);
+        }
+
+        function loadDashboardData(period = 'day') {
+            if (unsubscribeDashboard) unsubscribeDashboard();
+
+            const now = new Date();
+            let startDate = new Date();
+            if (period === 'day') startDate.setHours(0,0,0,0);
+            else if (period === 'week') startDate.setDate(now.getDate() - 7);
+            else if (period === 'month') startDate.setMonth(now.getMonth() - 1);
+            else if (period === 'semester') startDate.setMonth(now.getMonth() - 6);
+            else if (period === 'year') startDate.getFullYear(now.getFullYear() - 1);
+
+            unsubscribeDashboard = db.collection('transactions')
+                .where('status', 'in', ['completed', 'approved'])
+                .onSnapshot(snapshot => {
+                    let totalRevenue = 0;
+                    let totalSales = 0;
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const txDate = data.createdAt ? data.createdAt.toDate() : new Date();
+                        if (txDate >= startDate) {
+                            totalRevenue += Number(data.amount || data.price || 0);
+                            totalSales++;
+                        }
+                    });
+
+                    document.getElementById('kpi-revenue').innerText = totalRevenue.toLocaleString('pt-AO') + ' Kz';
+                    document.getElementById('kpi-sales').innerText = totalSales;
+                }, err => {
+                    console.error("Erro ao ler faturamento:", err);
+                });
+
+            db.collection('users').get().then(snapshot => {
+                document.getElementById('kpi-users').innerText = snapshot.size;
+            }).catch(() => {
+                document.getElementById('kpi-users').innerText = '0';
+            });
+        }
+
+        // ==========================================
+        // 9. NOVO: GERENCIAR VENDAS PENDENTES DO CHECKOUT
+        // ==========================================
+        function loadPendingSales() {
+            const tbody = document.getElementById('pending-sales-table-body');
+            if (unsubscribePendingSales) unsubscribePendingSales();
+
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Buscando pedidos no banco...</td></tr>`;
+
+            unsubscribePendingSales = db.collection('transactions')
+                .orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    tbody.innerHTML = '';
+                    if (snapshot.empty) {
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhuma venda cadastrada no sistema.</td></tr>`;
+                        return;
+                    }
+
+                    let pendingCount = 0;
+
+                    snapshot.forEach(doc => {
+                        const t = doc.data();
+                        const txId = doc.id;
+                        const email = t.userEmail || t.email || 'N/A';
+                        const productTitle = t.productTitle || t.titulo || 'Produto Checkout';
+                        const productId = t.productId || t.produtoId || '';
+                        const amount = t.amount || t.preco || 0;
+                        const status = t.status || 'pending';
+                        const proof = t.proofUrl || t.comprovativo || t.paymentMethod || 'Checkout';
+                        
+                        const dateFormatted = t.createdAt ? new Date(t.createdAt.toDate()).toLocaleString('pt-AO') : 'Hoje';
+
+                        const isPending = (status === 'pending' || status === 'pendente' || status === 'aguardando');
+
+                        if (isPending) pendingCount++;
+
+                        const statusBadge = isPending 
+                            ? `<span style="background:rgba(245,158,11,0.15); color:var(--warning); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> Pendente</span>`
+                            : `<span style="background:rgba(16,185,129,0.15); color:var(--success); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Autorizada</span>`;
+
+                        const proofDisplay = proof.startsWith('http')
+                            ? `<a href="${escapeHtml(proof)}" target="_blank" style="color:var(--info); text-decoration:underline;"><i class="fa-solid fa-paperclip"></i> Ver Comprovativo</a>`
+                            : `<span style="color:var(--text-muted); font-size:0.8rem;">${escapeHtml(proof)}</span>`;
+
+                        const safeEmail = escapeJsArg(email);
+                        const safeProductId = escapeJsArg(productId);
+                        const safeProductTitle = escapeJsArg(productTitle);
+
+                        tbody.innerHTML += `
+                            <tr style="${isPending ? 'background: rgba(245, 158, 11, 0.03);' : ''}">
+                                <td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(dateFormatted)}</td>
+                                <td>
+                                    <strong style="color:var(--primary);">${escapeHtml(email)}</strong>
+                                </td>
+                                <td><strong>${escapeHtml(productTitle)}</strong></td>
+                                <td style="color:var(--success); font-weight:700;">${Number(amount).toLocaleString('pt-AO')} Kz</td>
+                                <td>${proofDisplay}</td>
+                                <td>${statusBadge}</td>
+                                <td style="text-align:right;">
+                                    ${isPending ? `
+                                        <button class="btn-action btn-success" style="padding:6px 14px; font-size:0.78rem;" onclick="approveCheckoutSale('${txId}', '${safeEmail}', '${safeProductId}', '${safeProductTitle}')">
+                                            <i class="fa-solid fa-check"></i> Autorizar & Liberar
+                                        </button>
+                                    ` : `
+                                        <button class="btn-action btn-secondary" style="padding:6px 14px; font-size:0.78rem;" disabled>
+                                            <i class="fa-solid fa-user-check"></i> Liberado
+                                        </button>
+                                    `}
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    if (pendingCount === 0 && tbody.children.length > 0) {
+                        tbody.innerHTML += `<tr><td colspan="7" style="text-align:center; color:var(--success); padding:1rem; font-size:0.85rem;"><i class="fa-solid fa-circle-check"></i> Todas as vendas do checkout foram autorizadas!</td></tr>`;
+                    }
+                }, err => {
+                    console.error("Erro ao carregar vendas pendentes:", err);
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar pedidos pendentes.</td></tr>`;
+                });
+        }
+
+        async function approveCheckoutSale(txId, email, productId, productTitle) {
+            if (!email || email === 'N/A') {
+                showToast('E-mail inválido para liberar acesso.', 'warning');
+                return;
+            }
+
+            Swal.fire({
+                title: 'Autorizar Venda e Liberar Produto?',
+                text: `Esta ação vai aprovar a compra e liberar o produto (${productTitle}) para o e-mail: ${email}.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#1F1F2C',
+                confirmButtonText: 'Sim, Liberar Acesso',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'swal2-popup-dark', title: 'swal2-title-dark' }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const batch = db.batch();
+
+                        // 1. Atualizar transação para 'completed'
+                        const txRef = db.collection('transactions').doc(txId);
+                        batch.update(txRef, {
+                            status: 'completed',
+                            approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+
+                        // 2. Registar em 'user_access'
+                        const cleanDocId = `${email.replace(/[^a-z0-9]/gi, '_')}_${productId || 'geral'}`;
+                        const accessRef = db.collection('user_access').doc(cleanDocId);
+                        batch.set(accessRef, {
+                            userEmail: email,
+                            productId: productId || '',
+                            productTitle: productTitle,
+                            status: 'unlocked',
+                            requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+
+                        // 3. Atualizar diretamente na conta do usuário (se cadastrado)
+                        const userQuery = await db.collection('users').where('email', '==', email).limit(1).get();
+                        if (!userQuery.empty) {
+                            const userDocRef = db.collection('users').doc(userQuery.docs[0].id);
+                            const updateMap = {};
+                            if (productId) updateMap[`produtos.${productId}`] = true;
+                            batch.set(userDocRef, updateMap, { merge: true });
+                        }
+
+                        await batch.commit();
+
+                        showToast(`Produto "${productTitle}" liberado com sucesso para ${email}!`, 'success');
+                        loadPendingSales();
+
+                    } catch (err) {
+                        console.error("Erro ao autorizar venda:", err);
+                        showToast('Erro ao liberar acesso: ' + err.message, 'warning');
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // 10. CARREGAR PRODUTOS
+        // ==========================================
+        function loadProducts() {
+            const tbody = document.getElementById('products-table-body');
+            if (unsubscribeProducts) unsubscribeProducts();
+
+            unsubscribeProducts = db.collection('produtos')
+                .orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    tbody.innerHTML = '';
+                    if (snapshot.empty) {
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum produto cadastrado na tabela de produtos.</td></tr>`;
+                        return;
+                    }
+                    snapshot.forEach(doc => {
+                        const p = doc.data();
+
+                        const oldPriceHtml = p.precoAntigo && p.precoAntigo > 0 ? `<span class="price-old">${Number(p.precoAntigo).toLocaleString('pt-AO')} Kz</span>` : '';
+                        const newPriceHtml = `<span class="price-new">${p.precoAtual ? Number(p.precoAtual).toLocaleString('pt-AO') + ' Kz' : 'Grátis'}</span>`;
+
+                        const imgTag = p.imagem 
+                            ? `<img src="${escapeHtml(p.imagem)}" style="width:42px; height:42px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);">`
+                            : `<div style="width:42px; height:42px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="fa-solid fa-image"></i></div>`;
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${imgTag}</td>
+                                <td>
+                                    <strong style="font-size:0.9rem; display:block;">${escapeHtml(p.titulo)}</strong>
+                                    <span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(p.slug || '')}</span>
+                                </td>
+                                <td><span class="cat-badge">${escapeHtml(p.categoria || 'beats')}</span></td>
+                                <td>
+                                    <div class="price-box">
+                                        ${oldPriceHtml}
+                                        ${newPriceHtml}
+                                    </div>
+                                </td>
+                                <td><strong>${p.vendas || 0}</strong></td>
+                                <td>
+                                    ${p.destaque ? '<i class="fa-solid fa-star" style="color:#FFD700;"></i> Sim' : '<span style="color:var(--text-muted);">Não</span>'}
+                                </td>
+                                <td style="text-align:right;">
+                                    <div style="display:inline-flex; gap:6px;">
+                                        <button class="btn-action btn-secondary btn-icon-only" onclick="editProduct('${doc.id}')" title="Editar Produto"><i class="fa-solid fa-pen-to-square" style="color:var(--info);"></i></button>
+                                        <button class="btn-action btn-danger btn-icon-only" onclick="deleteProduct('${doc.id}')" title="Eliminar Produto"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }, err => {
+                    console.error(err);
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar produtos. Verifique as permissões.</td></tr>`;
+                });
+        }
+
+        function deleteProduct(id) {
+            Swal.fire({
+                title: 'Eliminar Produto?',
+                text: 'Esta ação removerá o item da tabela permanentemente.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E50914',
+                cancelButtonColor: '#1F1F2C',
+                confirmButtonText: 'Sim, Eliminar',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'swal2-popup-dark', title: 'swal2-title-dark' }
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    db.collection('produtos').doc(id).delete().then(() => {
+                        showToast('Item removido com sucesso.', 'info');
+                    }).catch(err => {
+                        showToast('Erro ao remover: ' + err.message, 'warning');
+                    });
+                }
+            });
+        }
+
+        // ==========================================
+        // 11. LIBERAÇÃO DE ACESSOS POR E-MAIL E PERFIL
+        // ==========================================
+        function loadAccessRequests() {
+            const tbody = document.getElementById('access-table-body');
+            if (unsubscribeAccess) unsubscribeAccess();
+
+            unsubscribeAccess = db.collection('user_access')
+                .orderBy('requestedAt', 'desc')
+                .onSnapshot(snapshot => {
+                    tbody.innerHTML = '';
+                    if (snapshot.empty) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum registro de acesso configurado.</td></tr>`;
+                        return;
+                    }
+                    snapshot.forEach(doc => {
+                        const acc = doc.data();
+                        const currentStatus = acc.status || 'locked';
+                        const isUnlocked = currentStatus === 'unlocked';
+                        const cleanWhatsapp = acc.whatsapp ? String(acc.whatsapp).replace(/\D/g, '') : '';
+                        const clientIdentifier = acc.userEmail ? `${escapeHtml(acc.userName || 'Cliente')} <br><span style="font-size:0.75rem; color:var(--primary);"><i class="fa-regular fa-envelope"></i> ${escapeHtml(acc.userEmail)}</span>` : escapeHtml(acc.userName || acc.userId || 'Utilizador');
+                        
+                        const safeUserId = escapeJsArg(acc.userId || '');
+                        const safeProductId = escapeJsArg(acc.productId || '');
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${clientIdentifier}</td>
+                                <td><strong>${escapeHtml(acc.productTitle || acc.productId || 'Produto VIP')}</strong></td>
+                                <td>
+                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(acc.whatsapp || 'N/A')}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span style="padding:4px 10px; border-radius:6px; font-size:0.75rem; background:${isUnlocked ? 'rgba(16,185,129,0.15); color:var(--success);' : 'rgba(245,158,11,0.15); color:var(--warning);'}">
+                                        ${isUnlocked ? 'Acesso Liberado' : 'Acesso Revogado'}
+                                    </span>
+                                </td>
+                                <td style="text-align:right;">
+                                    <button class="btn-action ${isUnlocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAccess('${doc.id}', '${currentStatus}', '${safeUserId}', '${safeProductId}')">
+                                        ${isUnlocked ? 'Revogar Acesso' : 'Liberar Acesso'}
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }, err => {
+                    console.error(err);
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar solicitações.</td></tr>`;
+                });
+        }
+
+        async function toggleAccess(id, currentStatus, userId, productId) {
+            const newStatus = currentStatus === 'unlocked' ? 'locked' : 'unlocked';
+            
+            try {
+                // 1. Atualiza na coleção 'user_access'
+                await db.collection('user_access').doc(id).update({
+                    status: newStatus,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // 2. Se o ID do usuário estiver disponível, atualiza a permissão diretamente no documento do cliente
+                if (userId && productId) {
+                    const userRef = db.collection('users').doc(userId);
+                    const updateObj = {};
+                    updateObj[`produtos.${productId}`] = (newStatus === 'unlocked');
+                    await userRef.set(updateObj, { merge: true });
+                }
+
+                showToast(`Acesso do produto ${newStatus === 'unlocked' ? 'liberado na conta do cliente' : 'revogado'} com sucesso!`, 'success');
+            } catch (err) {
+                showToast('Erro ao atualizar permissão: ' + err.message, 'warning');
+            }
+        }
+
+        async function openGrantAccessModal() {
+            document.getElementById('grant-email').value = '';
+            document.getElementById('grant-access-modal').style.display = 'flex';
+
+            const datalist = document.getElementById('registered-emails-list');
+            datalist.innerHTML = '';
+            try {
+                const usersSnap = await db.collection('users').get();
+                usersSnap.forEach(uDoc => {
+                    const email = uDoc.data().email;
+                    if (email) {
+                        const opt = document.createElement('option');
+                        opt.value = email;
+                        datalist.appendChild(opt);
+                    }
+                });
+            } catch (err) {
+                console.warn('Não foi possível carregar sugestões de e-mail:', err);
+            }
+
+            await renderGrantProductsList();
+        }
+
+        async function renderGrantProductsList() {
+            const productsList = document.getElementById('grant-products-list');
+            productsList.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">Carregando produtos...</p>`;
+
+            try {
+                const pSnap = await db.collection('produtos').orderBy('titulo', 'asc').get();
+                if (pSnap.empty) {
+                    productsList.innerHTML = `<p style="color:var(--warning); font-size:0.85rem; text-align:center;">Nenhum produto cadastrado para liberar.</p>`;
+                    return;
+                }
+
+                productsList.innerHTML = '';
+                pSnap.forEach(pDoc => {
+                    const p = pDoc.data();
+                    const pId = pDoc.id;
+                    const pTitle = p.titulo || 'Produto sem título';
+                    const pCat = p.categoria || 'geral';
+
+                    productsList.innerHTML += `
+                        <label class="product-checkbox-item">
+                            <input type="checkbox" name="grant_product_ids" value="${pId}" data-title="${escapeHtml(pTitle)}" data-category="${escapeHtml(pCat)}">
+                            <div style="display:flex; flex-direction:column;">
+                                <strong style="font-size:0.88rem; color:#FFF;">${escapeHtml(pTitle)}</strong>
+                                <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Categoria: ${escapeHtml(pCat)}</span>
+                            </div>
+                        </label>
+                    `;
+                });
+            } catch (err) {
+                productsList.innerHTML = `<p style="color:#FF4D4D; font-size:0.85rem; text-align:center;">Erro ao carregar lista de produtos.</p>`;
+            }
+        }
+
+        async function onGrantEmailChange() {
+            const emailInput = document.getElementById('grant-email').value.trim().toLowerCase();
+            const checkboxes = document.querySelectorAll('input[name="grant_product_ids"]');
+            
+            checkboxes.forEach(cb => cb.checked = false);
+
+            if (!emailInput) return;
+
+            try {
+                const accessSnap = await db.collection('user_access')
+                    .where('userEmail', '==', emailInput)
+                    .where('status', '==', 'unlocked')
+                    .get();
+
+                accessSnap.forEach(doc => {
+                    const pId = doc.data().productId;
+                    const cb = document.querySelector(`input[name="grant_product_ids"][value="${pId}"]`);
+                    if (cb) cb.checked = true;
+                });
+
+                const userQuery = await db.collection('users').where('email', '==', emailInput).limit(1).get();
+                if (!userQuery.empty) {
+                    const uData = userQuery.docs[0].data();
+                    if (uData.produtos) {
+                        checkboxes.forEach(cb => {
+                            if (uData.produtos[cb.value] === true) {
+                                cb.checked = true;
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.log("Erro ao carregar permissões atuais do e-mail:", err);
+            }
+        }
+
+        function closeGrantAccessModal() {
+            document.getElementById('grant-access-modal').style.display = 'none';
+        }
+
+        function toggleSelectAllGrantProducts() {
+            const checkboxes = document.querySelectorAll('input[name="grant_product_ids"]');
+            if (checkboxes.length === 0) return;
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+        }
+
+        async function submitGrantAccess() {
+            const emailInput = document.getElementById('grant-email').value.trim().toLowerCase();
+            const allBoxes = document.querySelectorAll('input[name="grant_product_ids"]');
+
+            if (!emailInput) {
+                showToast('Informe o e-mail do cliente.', 'warning');
+                return;
+            }
+
+            const btnSubmit = document.getElementById('btn-grant-access');
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando Acessos...';
+
+            try {
+                let clientName = 'Cliente VIP';
+                let clientWhatsapp = '';
+                let userId = null;
+
+                const userQuery = await db.collection('users').where('email', '==', emailInput).limit(1).get();
+                if (!userQuery.empty) {
+                    const uData = userQuery.docs[0].data();
+                    clientName = uData.name || clientName;
+                    clientWhatsapp = uData.whatsapp || '';
+                    userId = userQuery.docs[0].id;
+                }
+
+                const batch = db.batch();
+                const userProductsUpdate = {};
+                let countGranted = 0;
+
+                allBoxes.forEach(box => {
+                    const productId = box.value;
+                    const productTitle = box.getAttribute('data-title');
+                    const productCategory = box.getAttribute('data-category');
+                    const isChecked = box.checked;
+                    
+                    const docId = `${emailInput.replace(/[^a-z0-9]/gi, '_')}_${productId}`;
+                    const docRef = db.collection('user_access').doc(docId);
+
+                    if (isChecked) {
+                        countGranted++;
+                        batch.set(docRef, {
+                            userEmail: emailInput,
+                            userId: userId || emailInput,
+                            userName: clientName,
+                            whatsapp: clientWhatsapp,
+                            productId: productId,
+                            productTitle: productTitle,
+                            category: productCategory,
+                            status: 'unlocked',
+                            requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+
+                        userProductsUpdate[`produtos.${productId}`] = true;
+                        if (productCategory) {
+                            userProductsUpdate[`produtos.${productCategory}`] = true;
+                        }
+                    } else {
+                        batch.set(docRef, {
+                            userEmail: emailInput,
+                            userId: userId || emailInput,
+                            userName: clientName,
+                            whatsapp: clientWhatsapp,
+                            productId: productId,
+                            productTitle: productTitle,
+                            category: productCategory,
+                            status: 'locked',
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+
+                        userProductsUpdate[`produtos.${productId}`] = false;
+                    }
+                });
+
+                if (userId) {
+                    const userRef = db.collection('users').doc(userId);
+                    batch.set(userRef, userProductsUpdate, { merge: true });
+                }
+
+                await batch.commit();
+
+                showToast(`Sucesso! ${countGranted} produto(s) liberado(s) para o e-mail ${emailInput}.`, 'success');
+                closeGrantAccessModal();
+
+            } catch (err) {
+                console.error("Erro ao liberar acessos:", err);
+                showToast("Erro ao liberar acessos: " + err.message, "warning");
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fa-solid fa-check-double"></i> Confirmar & Salvar Permissões';
+            }
+        }
+
+        // ==========================================
+        // 12. CENTRAL DE CHAT COM E-MAIL
+        // ==========================================
+        function loadChatUsers() {
+            const chatUsersList = document.getElementById('chat-users-list');
+            if (unsubscribeChatList) unsubscribeChatList();
+
+            unsubscribeChatList = db.collection('chats')
+                .orderBy('updatedAt', 'desc')
+                .onSnapshot(async snapshot => {
+                    if (snapshot.empty) {
+                        chatUsersList.innerHTML = `<p style="padding:1rem; color:var(--text-muted); font-size:0.8rem; text-align:center;">Nenhuma conversa iniciada.</p>`;
+                        return;
+                    }
+
+                    const chatItemsPromises = snapshot.docs.map(async doc => {
+                        const c = doc.data();
+                        const isActive = doc.id === activeChatUserId ? 'active' : '';
+                        let userEmail = c.userEmail || c.email || '';
+
+                        if (!userEmail) {
+                            try {
+                                const uDoc = await db.collection('users').doc(doc.id).get();
+                                if (uDoc.exists && uDoc.data().email) {
+                                    userEmail = uDoc.data().email;
+                                }
+                            } catch(e) {}
+                        }
+
+                        const userName = c.userName || 'Estudante VIP';
+                        const safeUserName = escapeJsArg(userName);
+                        const safeUserEmail = escapeJsArg(userEmail);
+
+                        return `
+                            <div class="chat-user-item ${isActive}" onclick="selectChatUser('${doc.id}', '${safeUserName}', '${safeUserEmail}')">
+                                <div class="avatar-box" style="width:36px; height:36px; font-size:0.9rem;"><i class="fa-solid fa-user"></i></div>
+                                <div style="overflow:hidden; width:100%;">
+                                    <strong style="font-size:0.88rem; display:block; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;">${escapeHtml(userName)}</strong>
+                                    ${userEmail ? `<span style="font-size:0.75rem; color:var(--primary); display:block; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;"><i class="fa-regular fa-envelope"></i> ${escapeHtml(userEmail)}</span>` : ''}
+                                    <span style="font-size:0.72rem; color:var(--text-muted); text-overflow:ellipsis; white-space:nowrap; overflow:hidden; display:block;">${escapeHtml(c.lastMessage || 'Conversa iniciada')}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    const itemsHtmlArr = await Promise.all(chatItemsPromises);
+                    chatUsersList.innerHTML = itemsHtmlArr.join('');
+                });
+        }
+
+        async function selectChatUser(userId, userName, userEmail) {
+            activeChatUserId = userId;
+
+            if (!userEmail) {
+                try {
+                    const uDoc = await db.collection('users').doc(userId).get();
+                    if (uDoc.exists) {
+                        userEmail = uDoc.data().email || '';
+                    }
+                } catch (err) {
+                    console.log("Erro ao recuperar e-mail:", err);
+                }
+            }
+
+            const emailDisplay = userEmail 
+                ? `<a href="mailto:${escapeHtml(userEmail)}" style="font-size:0.82rem; font-weight:normal; color:var(--primary); text-decoration:none;" title="Enviar e-mail para este cliente"><i class="fa-regular fa-envelope"></i> ${escapeHtml(userEmail)}</a>`
+                : `<span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">E-mail não cadastrado</span>`;
+
+            document.getElementById('chat-header').innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                    <span><i class="fa-solid fa-user" style="color:var(--primary); margin-right:8px;"></i> ${escapeHtml(userName)}</span>
+                    <div>${emailDisplay}</div>
+                </div>
+            `;
+
+            loadChatUsers();
+
+            const box = document.getElementById('chat-messages');
+            if (unsubscribeChatMessages) unsubscribeChatMessages();
+
+            unsubscribeChatMessages = db.collection('chats').doc(userId).collection('messages')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snapshot => {
+                    box.innerHTML = '';
+                    if (snapshot.empty) {
+                        box.innerHTML = `<p style="color:var(--text-muted); text-align:center; margin-top:auto; margin-bottom:auto;">Sem mensagens com este aluno.</p>`;
+                        return;
+                    }
+
+                    snapshot.forEach(doc => {
+                        const m = doc.data();
+                        const isAdmin = m.sender === 'admin';
+                        box.innerHTML += `
+                            <div style="align-self:${isAdmin ? 'flex-end' : 'flex-start'}; background:${isAdmin ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}; padding:10px 14px; border-radius:12px; max-width:70%; font-size:0.85rem; color:#FFF;">
+                                ${escapeHtml(m.text)}
+                            </div>
+                        `;
+                    });
+                    box.scrollTop = box.scrollHeight;
+                });
+        }
+
+        function sendAdminMessage() {
+            if (!activeChatUserId) {
+                showToast('Selecione um aluno para responder.', 'warning');
+                return;
+            }
+
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+
+            const batch = db.batch();
+            const msgRef = db.collection('chats').doc(activeChatUserId).collection('messages').doc();
+            const chatRef = db.collection('chats').doc(activeChatUserId);
+
+            batch.set(msgRef, {
+                sender: 'admin',
+                text: text,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            batch.set(chatRef, {
+                lastMessage: text,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            batch.commit().catch(err => {
+                showToast('Erro ao enviar mensagem: ' + err.message, 'warning');
+            });
+        }
+
+        // ==========================================
+        // 13. BASE DE USUÁRIOS
+        // ==========================================
+        function loadUsers() {
+            const tbody = document.getElementById('users-table-body');
+            if (unsubscribeUsers) unsubscribeUsers();
+
+            unsubscribeUsers = db.collection('users')
+                .orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    tbody.innerHTML = '';
+                    if (snapshot.empty) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum usuário registrado.</td></tr>`;
+                        return;
+                    }
+                    snapshot.forEach(doc => {
+                        const u = doc.data();
+                        const cleanWhatsapp = u.whatsapp ? String(u.whatsapp).replace(/\D/g, '') : '';
+                        const safeName = escapeJsArg(u.name || 'Utilizador');
+                        const safeEmail = escapeJsArg(u.email || '');
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight:600;">${escapeHtml(u.name || 'Sem Nome')}</td>
+                                <td style="color:var(--text-muted);">${escapeHtml(u.email || 'N/A')}</td>
+                                <td>
+                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(u.whatsapp || 'Não informado')}
+                                    </a>
+                                </td>
+                                <td>${escapeHtml(u.country || 'Angola')}</td>
+                                <td style="text-align:right;">
+                                    <button class="btn-action btn-primary" style="padding:6px 12px; font-size:0.78rem;" 
+                                        onclick="openChatWithUser('${doc.id}', '${safeName}', '${safeEmail}')">
+                                        <i class="fa-solid fa-comments"></i> Chat
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }, err => {
+                    console.error(err);
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar usuários.</td></tr>`;
+                });
+        }
+
+        async function openChatWithUser(userId, userName, userEmail) {
+            try {
+                const chatRef = db.collection('chats').doc(userId);
+                const chatDoc = await chatRef.get();
+
+                if (!chatDoc.exists) {
+                    await chatRef.set({
+                        userName: userName,
+                        userEmail: userEmail,
+                        lastMessage: 'Atendimento iniciado pelo suporte',
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    await chatRef.set({
+                        userName: userName,
+                        userEmail: userEmail
+                    }, { merge: true });
+                }
+
+                const chatMenuItem = document.querySelectorAll('.menu-item')[4];
+                switchView('chat', chatMenuItem);
+                selectChatUser(userId, userName, userEmail);
+            } catch (error) {
+                showToast('Erro ao abrir chat: ' + error.message, 'warning');
+            }
+        }
+    </script>
+</body>
+</html>

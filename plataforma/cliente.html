@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Cliente VIP | Loneke no Beat</title>
+
+    <!-- Fontes Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons 6.5.1 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- SweetAlert2 CSS e JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Firebase SDK Compat v10.8.0 -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #E50914;
+            --primary-hover: #FF1E27;
+            --primary-glow: rgba(229, 9, 20, 0.45);
+            --success: #10B981;
+            --success-glow: rgba(16, 185, 129, 0.35);
+            --warning: #F59E0B;
+            --info: #3B82F6;
+
+            --bg-body: #050508;
+            --bg-sidebar: rgba(10, 10, 15, 0.92);
+            --bg-card: rgba(18, 18, 26, 0.70);
+            --bg-card-hover: rgba(28, 28, 40, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+
+            --text-main: #FFFFFF;
+            --text-muted: #9CA3AF;
+            --sidebar-width: 270px;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+            --transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        input, textarea, select {
+            user-select: text;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -250px;
+            right: -200px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0,0,0,0) 70%);
+            z-index: 0;
+            pointer-events: none;
+            animation: pulseGlow 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1) translate(0, 0); opacity: 0.4; }
+            100% { transform: scale(1.2) translate(-50px, 40px); opacity: 0.7; }
+        }
+
+        /* PRELOADER */
+        #preloader {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #030305;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
+        }
+
+        #preloader.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: pulseLogo 1.5s infinite alternate;
+        }
+
+        .loader-logo i { color: var(--primary); }
+
+        @keyframes pulseLogo {
+            0% { transform: scale(0.98); opacity: 0.8; }
+            100% { transform: scale(1.05); filter: drop-shadow(0 0 15px var(--primary-glow)); }
+        }
+
+        .loader-bar {
+            width: 200px; height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px; overflow: hidden; position: relative;
+        }
+
+        .loader-progress {
+            position: absolute; top: 0; left: 0; height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), #FF5555);
+            border-radius: 10px; box-shadow: 0 0 12px var(--primary-glow);
+            transition: width 0.3s ease;
+        }
+
+        /* TOAST NOTIFICATIONS */
+        #toast-container {
+            position: fixed; bottom: 24px; right: 24px; z-index: 10000;
+            display: flex; flex-direction: column; gap: 12px; pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto; min-width: 300px; max-width: 400px;
+            background: rgba(15, 15, 22, 0.95); border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px); border-radius: var(--radius-md); padding: 14px 18px;
+            display: flex; align-items: flex-start; gap: 14px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            transform: translateX(120%); animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes toastIn { to { transform: translateX(0); } }
+        .toast.toast-out { animation: toastOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes toastOut { to { transform: translateX(120%); opacity: 0; } }
+
+        .toast-icon { font-size: 1.3rem; margin-top: 2px; }
+        .toast-success .toast-icon { color: var(--success); }
+        .toast-info .toast-icon { color: var(--info); }
+        .toast-warning .toast-icon { color: var(--warning); }
+        .toast-content { flex: 1; }
+        .toast-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }
+        .toast-msg { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+        /* LAYOUT GENERAL */
+        .app-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        #sidebarOverlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 99; display: none; opacity: 0; transition: opacity 0.3s ease;
+        }
+        #sidebarOverlay.active { display: block; opacity: 1; }
+
+        #sidebar {
+            width: var(--sidebar-width); background: var(--bg-sidebar);
+            position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+            padding: 24px 16px; transition: var(--transition);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column; backdrop-filter: blur(25px);
+            overflow-y: auto;
+        }
+
+        .top-navbar {
+            position: fixed; top: 0; right: 0; left: var(--sidebar-width); height: 70px;
+            background: rgba(7, 7, 10, 0.75); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color); z-index: 90;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; transition: var(--transition);
+        }
+
+        .nav-actions { display: flex; align-items: center; gap: 1rem; margin-left: auto; }
+
+        .icon-btn {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color);
+            color: var(--text-main); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: var(--transition); position: relative;
+        }
+        .icon-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+
+        .main-content {
+            flex: 1; margin-left: var(--sidebar-width); margin-top: 70px;
+            padding: 2.5rem; min-height: calc(100vh - 70px); transition: var(--transition);
+        }
+
+        /* USER PROFILE CARD IN SIDEBAR */
+        .user-profile-box {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 1.8rem; padding: 12px;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+        }
+
+        .user-avatar {
+            width: 46px; height: 46px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--primary); box-shadow: 0 0 12px var(--primary-glow); flex-shrink: 0;
+            background: #111; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #FFF;
+            overflow: hidden;
+        }
+
+        .menu-label {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); font-weight: 700; margin: 1.2rem 0 0.6rem 10px;
+        }
+
+        .menu-item {
+            display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+            color: var(--text-muted); font-size: 0.88rem; font-weight: 500;
+            border-radius: var(--radius-md); cursor: pointer; transition: var(--transition);
+            margin-bottom: 0.3rem; text-decoration: none;
+        }
+        .menu-item i { font-size: 1.1rem; width: 22px; text-align: center; }
+        .menu-item:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.05); transform: translateX(4px); }
+        .menu-item.active {
+            color: var(--text-main);
+            background: linear-gradient(90deg, rgba(229, 9, 20, 0.25) 0%, rgba(229, 9, 20, 0.02) 100%);
+            border-left: 3px solid var(--primary); font-weight: 600;
+        }
+        .menu-item.active i { color: var(--primary); filter: drop-shadow(0 0 8px var(--primary-glow)); }
+
+        .panel-view { display: none; opacity: 0; transform: translateY(20px); }
+        .panel-view.active { display: block; animation: viewEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes viewEntrance { to { opacity: 1; transform: translateY(0); } }
+
+        .view-title {
+            font-family: 'Montserrat', sans-serif; font-size: 1.8rem; font-weight: 800;
+            margin-bottom: 0.4rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px;
+        }
+
+        .form-label {
+            font-size: 0.78rem; font-weight: 700; color: var(--text-muted);
+            margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .search-input {
+            width: 100%; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); padding: 12px 16px; color: var(--text-main);
+            font-family: inherit; font-size: 0.9rem; outline: none; transition: var(--transition);
+        }
+        .search-input:focus { border-color: var(--primary); background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 20px var(--primary-glow); }
+        select.search-input option { background: #0D0D12; color: #FFF; padding: 10px; }
+
+        .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            padding: 1.5rem; display: flex; align-items: center; gap: 20px; transition: var(--transition); backdrop-filter: blur(12px);
+        }
+        .stat-card:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.2); }
+        .stat-icon { width: 55px; height: 55px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .stat-info h3 { font-size: 1.8rem; font-family: 'Montserrat', sans-serif; font-weight: 800; }
+        .stat-info p { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+
+        /* GRID DE PRODUTOS */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .product-card {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+            overflow: hidden; backdrop-filter: blur(12px); transition: var(--transition); display: flex; flex-direction: column; position: relative;
+        }
+        .product-card:hover { transform: translateY(-6px); border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+        .product-thumb-container { position: relative; width: 100%; height: 180px; overflow: hidden; background: #000; }
+        .product-thumb { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+        .product-card:hover .product-thumb { transform: scale(1.06); }
+        .product-badge {
+            position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(10px);
+        }
+        .badge-unlocked { background: rgba(16, 185, 129, 0.25); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge-locked { background: rgba(229, 9, 20, 0.25); color: #FF4D4D; border: 1px solid rgba(229, 9, 20, 0.4); }
+        .product-body { padding: 1.2rem; flex: 1; display: flex; flex-direction: column; }
+        .product-title { font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; line-height: 1.3; }
+        .product-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* BUTTONS */
+        .btn-action {
+            padding: 10px 18px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.82rem;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: var(--transition); border: none; text-decoration: none; width: 100%;
+        }
+        .btn-primary { background: var(--primary); color: #FFF; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 20px var(--primary-glow); }
+        .btn-whatsapp { background: #25D366; color: #FFF; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); }
+        .btn-whatsapp:hover { background: #20ba5a; color: #FFF; transform: translateY(-2px); }
+        .btn-secondary { background: rgba(255,255,255,0.05); color: #FFF; border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+        .btn-success { background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .btn-success:hover { background: var(--success); color: #FFF; }
+
+        /* CHAT SYSTEM CLIENT */
+        .chat-box-container { height: 70vh; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(12px); }
+        .chat-messages-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #060609; }
+        .chat-input-area { padding: 16px 20px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; background: rgba(255,255,255,0.02); }
+
+        /* LMS / SALA DE AULA VIRTUAL PLATAFORMA DE VÍDEOS */
+        .lms-modal-content {
+            background: #0B0B10; border: 1px solid var(--border-color); border-radius: 24px;
+            width: 100%; max-width: 1280px; height: 90vh; display: flex; flex-direction: column;
+            overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.95);
+        }
+
+        .lms-header {
+            padding: 1.2rem 1.8rem; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between; background: rgba(15,15,22,0.9);
+        }
+
+        .lms-grid-container {
+            display: grid; grid-template-columns: 1fr 380px; flex: 1; overflow: hidden;
+        }
+
+        .lms-player-section {
+            padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; background: #040406; position: relative;
+        }
+
+        .lms-video-wrapper {
+            position: relative; padding-top: 56.25%; width: 100%; background: #000;
+            border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .lms-video-wrapper iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
+        }
+
+        .lms-nav-controls {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 1rem; margin-bottom: 1rem; gap: 12px;
+        }
+
+        .btn-lms-nav {
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);
+            color: #FFF; padding: 10px 18px; border-radius: var(--radius-md);
+            cursor: pointer; font-size: 0.82rem; font-weight: 700; transition: var(--transition);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-lms-nav:hover:not(:disabled) { background: var(--primary); border-color: var(--primary); transform: translateY(-2px); }
+        .btn-lms-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .lms-sidebar-section {
+            background: rgba(12, 12, 18, 0.95); border-left: 1px solid var(--border-color);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .lms-sidebar-header {
+            padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--border-color);
+            background: rgba(20,20,30,0.5); font-weight: 800; font-size: 0.95rem;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .lms-modules-scroll {
+            flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem;
+        }
+
+        .lms-module-card {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); overflow: hidden;
+        }
+
+        .lms-module-title {
+            padding: 12px 14px; background: rgba(255,255,255,0.04); font-size: 0.85rem;
+            font-weight: 800; color: #FFF; border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .lms-lesson-item {
+            padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 600; color: var(--text-muted); cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.03); transition: var(--transition);
+        }
+        .lms-lesson-item:last-child { border-bottom: none; }
+        .lms-lesson-item:hover { background: rgba(255,255,255,0.06); color: #FFF; }
+        .lms-lesson-item.active {
+            background: rgba(229, 9, 20, 0.18); color: #FFF; font-weight: 700;
+            border-left: 3px solid var(--primary);
+        }
+        .lms-lesson-item.active i { color: var(--primary); animation: pulseLogo 1.5s infinite alternate; }
+
+        /* ABA DE TABS DA SALA DE AULA */
+        .btn-lms-tab {
+            background: transparent; border: none; color: var(--text-muted);
+            font-weight: 700; font-size: 0.85rem; padding: 8px 14px; border-radius: var(--radius-sm);
+            cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 6px;
+        }
+        .btn-lms-tab.active { background: rgba(255, 255, 255, 0.1); color: #FFF; border-bottom: 2px solid var(--primary); }
+
+        /* SWEETALERT DARK */
+        .swal2-popup-dark {
+            background: #0D0D12 !important; border: 1px solid rgba(229, 9, 20, 0.3) !important;
+            border-radius: 20px !important; color: #FFFFFF !important; backdrop-filter: blur(20px);
+        }
+        .swal2-title-dark { font-family: 'Montserrat', sans-serif !important; font-weight: 800 !important; }
+
+        @media (max-width: 1024px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            .top-navbar { left: 0; }
+            .main-content { margin-left: 0; padding: 1.5rem; }
+            #menuToggle { display: flex !important; }
+
+            .lms-grid-container { grid-template-columns: 1fr; overflow-y: auto; }
+            .lms-modal-content { height: 95vh; }
+            .lms-sidebar-section { border-left: none; border-top: 1px solid var(--border-color); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+    <!-- PRELOADER -->
+    <div id="preloader">
+        <div class="loader-logo">
+            <i class="fa-solid fa-compact-disc fa-spin"></i> LONEKE <span style="color:var(--primary);">VIP</span>
+        </div>
+        <div class="loader-bar">
+            <div class="loader-progress" id="loaderProgress"></div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <div class="app-container">
+
+        <!-- TOP NAVBAR -->
+        <header class="top-navbar">
+            <button class="icon-btn" id="menuToggle" style="display:none;" onclick="toggleSidebar(true)">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div style="font-weight:700; font-size:0.9rem; color:var(--text-muted);" id="navGreeting">
+                Bem-vindo ao Portal VIP
+            </div>
+            <div class="nav-actions">
+                <!-- Botão direto para a loja oficial -->
+                <a href="https://lonekenobeat.com" target="_blank" class="btn-action btn-secondary" style="width:auto; text-decoration:none; padding:8px 16px;">
+                    <i class="fa-solid fa-store" style="color:var(--primary);"></i> Loja Loneke no Beat
+                </a>
+                <button class="icon-btn" onclick="switchView('chat')">
+                    <i class="fa-solid fa-headset" style="color:var(--primary);"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar">
+            <div class="user-profile-box">
+                <div id="sidebar-avatar-container" class="user-avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div style="display:flex; flex-direction:column; overflow:hidden;">
+                    <span style="font-weight:800; font-size:0.95rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" id="sidebar-user-name">Carregando...</span>
+                    <span style="color:var(--primary); font-size:0.75rem; font-weight:700;" id="sidebar-user-role">Membro VIP</span>
+                </div>
+            </div>
+
+            <div class="menu-label">Menu Principal</div>
+            <div class="menu-item active" onclick="switchView('dashboard', this)">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </div>
+            <a href="https://lonekenobeat.com" target="_blank" class="menu-item">
+                <i class="fa-solid fa-cart-shopping" style="color:var(--success);"></i> Visitar Loja Principal
+            </a>
+            <div class="menu-item" onclick="switchView('edit-profile', this)">
+                <i class="fa-solid fa-user-pen"></i> Editar Perfil
+            </div>
+            <div class="menu-item" onclick="switchView('change-password', this)">
+                <i class="fa-solid fa-key"></i> Mudar Senha
+            </div>
+            <div class="menu-item" onclick="switchView('unlocked-products', this)">
+                <i class="fa-solid fa-circle-check"></i> Produtos Comprados
+            </div>
+            <div class="menu-item" onclick="switchView('chat', this)">
+                <i class="fa-solid fa-comments"></i> Suporte Chat
+            </div>
+            <div class="menu-item" onclick="switchView('locked-products', this)">
+                <i class="fa-solid fa-lock"></i> Produtos Bloqueados
+            </div>
+
+            <div class="menu-item" onclick="logoutUser()" style="margin-top:auto; color:#FF4D4D; border-top:1px solid var(--border-color); padding-top:1.2rem;">
+                <i class="fa-solid fa-right-from-bracket"></i> Terminar Sessão
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT VIEW -->
+        <main class="main-content">
+
+            <!-- 1. DASHBOARD VIEW -->
+            <section id="view-dashboard" class="panel-view active">
+                <div style="background: linear-gradient(135deg, rgba(229,9,20,0.15) 0%, rgba(10,10,15,0.8) 100%); border: 1px solid rgba(229,9,20,0.3); padding: 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem; backdrop-filter: blur(10px);">
+                    <h2 style="font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:800; margin-bottom:0.4rem;">Olá, <span id="dash-user-firstname">Membro</span></h2>
+                    <p style="color:var(--text-muted); font-size:0.92rem;">Aceda aos seus conteúdos exclusivos, projetos de áudio, formações e fale diretamente com o produtor.</p>
+                </div>
+
+                <!-- KPI CARDS -->
+                <div class="quick-stats">
+                    <div class="stat-card" onclick="switchView('unlocked-products')" style="cursor:pointer;">
+                        <div class="stat-icon" style="color:var(--success); background:rgba(16,185,129,0.1);"><i class="fa-solid fa-unlock-keyhole"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-unlocked-count">0</h3>
+                            <p>Produtos Liberados</p>
+                        </div>
+                    </div>
+                    <div class="stat-card" onclick="switchView('locked-products')" style="cursor:pointer;">
+                        <div class="stat-icon" style="color:var(--primary); background:rgba(229,9,20,0.1);"><i class="fa-solid fa-lock"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-locked-count">0</h3>
+                            <p>Produtos Disponíveis</p>
+                        </div>
+                    </div>
+                    <div class="stat-card" onclick="switchView('chat')" style="cursor:pointer;">
+                        <div class="stat-icon" style="color:var(--info); background:rgba(59,130,246,0.1);"><i class="fa-solid fa-comments"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-chat-messages">OK</h3>
+                            <p>Canal de Suporte</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="font-family:'Montserrat',sans-serif; font-size:1.2rem; font-weight:800; margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-bolt" style="color:var(--primary);"></i> Meus Conteúdos Recentes
+                </h3>
+                <div class="products-grid" id="dash-recent-products">
+                    <!-- Inserido dinamicamente -->
+                </div>
+            </section>
+
+            <!-- 2. EDIT PROFILE VIEW -->
+            <section id="view-edit-profile" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-user-pen" style="color:var(--primary);"></i> Editar Dados do Perfil</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Mantenha as suas informações pessoais e de contacto atualizadas.</p>
+
+                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; backdrop-filter:blur(12px); max-width:800px;">
+                    <form id="form-edit-profile" onsubmit="saveProfile(event)" style="display:flex; flex-direction:column; gap:1.2rem;">
+                        
+                        <!-- ÁREA DA FOTO DE PERFIL COM CARREGAMENTO LOCAL -->
+                        <div style="display:flex; align-items:center; gap:20px; background:rgba(255,255,255,0.02); padding:1.2rem; border-radius:var(--radius-md); border:1px solid var(--border-color); flex-wrap:wrap;">
+                            <div id="profile-preview-avatar" class="user-avatar" style="width:75px; height:75px; font-size:2rem;">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div style="flex:1; display:flex; flex-direction:column; gap:8px; min-width:240px;">
+                                <label class="form-label"><i class="fa-solid fa-camera" style="color:var(--primary);"></i> Foto do Perfil</label>
+                                <input type="text" id="prof-photo-url" class="search-input" placeholder="URL da foto ou escolha do dispositivo" oninput="updateProfileAvatarPreview()">
+                                
+                                <input type="file" id="prof-photo-file" accept="image/*" style="display:none;" onchange="handleProfilePhotoUpload(event)">
+                                <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('prof-photo-file').click()" style="width:fit-content;">
+                                    <i class="fa-solid fa-image"></i> Carregar da Galeria / Computador
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                            <div>
+                                <label class="form-label"><i class="fa-solid fa-signature"></i> Nome Completo</label>
+                                <input type="text" id="prof-name" class="search-input" required placeholder="Seu nome">
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fa-solid fa-envelope"></i> Endereço de E-mail</label>
+                                <input type="email" id="prof-email" class="search-input" disabled style="opacity:0.6; cursor:not-allowed;" title="E-mail gerido pelo sistema de autenticação">
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                            <div>
+                                <label class="form-label"><i class="fa-brands fa-whatsapp" style="color:var(--success);"></i> WhatsApp / Telefone</label>
+                                <input type="text" id="prof-whatsapp" class="search-input" placeholder="+244 9XX XXX XXX">
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fa-solid fa-globe"></i> País</label>
+                                <input type="text" id="prof-country" class="search-input" placeholder="Ex: Angola, Portugal, Brasil">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label"><i class="fa-solid fa-sliders" style="color:var(--primary);"></i> O que você faz na Música?</label>
+                            <select id="prof-role-music" class="search-input" style="cursor:pointer;">
+                                <option value="Produtor Musical">Produtor Musical</option>
+                                <option value="Beatmaker">Beatmaker</option>
+                                <option value="Engenheiro de Som / Mix & Master">Engenheiro de Som / Mix & Master</option>
+                                <option value="Cantor / Artista">Cantor / Artista</option>
+                                <option value="DJ">DJ</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="form-label"><i class="fa-solid fa-quote-left"></i> Biografia / Estilo Musical Preferido</label>
+                            <textarea id="prof-bio" class="search-input" placeholder="Conte um pouco sobre o seu trabalho ou géneros musicais favoritos..." style="height:80px; resize:none;"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-action btn-primary" id="btn-save-profile" style="width:fit-content; padding:12px 28px; margin-top:1rem;">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Alterações
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 3. CHANGE PASSWORD VIEW -->
+            <section id="view-change-password" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Alterar Palavra-passe</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Mantenha a sua conta VIP protegida atualizando a sua senha regularmente.</p>
+
+                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; backdrop-filter:blur(12px); max-width:550px;">
+                    <form id="form-change-pass" onsubmit="changeUserPassword(event)" style="display:flex; flex-direction:column; gap:1.2rem;">
+                        <div>
+                            <label class="form-label"><i class="fa-solid fa-lock"></i> Senha Atual</label>
+                            <input type="password" id="pass-current" class="search-input" required placeholder="Digite a sua senha atual">
+                        </div>
+
+                        <div>
+                            <label class="form-label"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Nova Senha</label>
+                            <input type="password" id="pass-new" class="search-input" required minlength="6" placeholder="Mínimo 6 caracteres">
+                        </div>
+
+                        <div>
+                            <label class="form-label"><i class="fa-solid fa-check-double"></i> Confirmar Nova Senha</label>
+                            <input type="password" id="pass-confirm" class="search-input" required minlength="6" placeholder="Repita a nova senha">
+                        </div>
+
+                        <button type="submit" class="btn-action btn-primary" id="btn-change-pass" style="width:fit-content; padding:12px 28px; margin-top:1rem;">
+                            <i class="fa-solid fa-shield-halved"></i> Atualizar Senha
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 4. UNLOCKED PRODUCTS VIEW -->
+            <section id="view-unlocked-products" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Meus Produtos Comprados</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Aceda aos ficheiros, cursos, FLP, drumkits e beats desbloqueados para a sua conta.</p>
+
+                <div class="products-grid" id="unlocked-products-list">
+                    <!-- Inserido dinamicamente -->
+                </div>
+            </section>
+
+            <!-- 5. CHAT SUPPORT VIEW -->
+            <section id="view-chat" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-comments" style="color:var(--primary);"></i> Suporte VIP & Atendimento Directo</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 1.5rem;">Tire dúvidas sobre projetos, solicite suporte ou acerte detalhes diretamente com a produção.</p>
+
+                <div class="chat-box-container">
+                    <div id="client-chat-messages" class="chat-messages-area">
+                        <p style="color:var(--text-muted); text-align:center; margin-top:auto; margin-bottom:auto;">A carregar o seu histórico de mensagens...</p>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="client-chat-input" class="search-input" placeholder="Escreva a sua mensagem para o Loneke no Beat..." onkeydown="if(event.key==='Enter') sendClientMessage()">
+                        <button class="btn-action btn-primary" onclick="sendClientMessage()" style="width:auto; padding:0 24px;"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. LOCKED PRODUCTS VIEW -->
+            <section id="view-locked-products" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-lock" style="color:var(--primary);"></i> Catálogo VIP & Produtos Disponíveis</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Explore beats, drum kits, plugins e formações disponíveis para liberação imediata.</p>
+
+                <div class="products-grid" id="locked-products-list">
+                    <!-- Inserido dinamicamente -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: SALA DE AULA VIP (PLATAFORMA COMPLETA DE CURSOS E AULAS COM PROCESSAMENTO E COMENTÁRIOS) -->
+    <div id="course-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); backdrop-filter:blur(15px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
+        <div class="lms-modal-content">
+            <div class="lms-header">
+                <div>
+                    <span style="font-size:0.72rem; color:var(--primary); font-weight:800; text-transform:uppercase; letter-spacing:1px;" id="lms-course-category">Formação VIP</span>
+                    <h3 style="font-family:'Montserrat',sans-serif; font-size:1.2rem; font-weight:800; color:#FFF;" id="lms-course-title">Nome do Curso</h3>
+                </div>
+                <button onclick="closeCourseModal()" class="icon-btn" style="width:36px; height:36px; background:rgba(255,255,255,0.06); border:none;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="lms-grid-container">
+                <div class="lms-player-section">
+
+                    <!-- TELA DE PROCESSAMENTO DO VÍDEO -->
+                    <div id="lms-processing-screen" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,8,0.96); backdrop-filter:blur(10px); z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; transition:opacity 0.3s ease;">
+                        <i class="fa-solid fa-compact-disc fa-spin" style="font-size:2.8rem; color:var(--primary);"></i>
+                        <p style="font-weight:800; font-size:1.1rem; color:#FFF;">A processar a aula...</p>
+                        <span style="font-size:0.82rem; color:var(--text-muted);">A carregar player e materiais em alta definição</span>
+                    </div>
+
+                    <div class="lms-video-wrapper">
+                        <iframe id="lms-iframe-player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen onload="hideLmsProcessing()"></iframe>
+                    </div>
+
+                    <div class="lms-nav-controls">
+                        <button class="btn-lms-nav" id="btn-prev-lesson" onclick="navigateLesson(-1)"><i class="fa-solid fa-chevron-left"></i> Aula Anterior</button>
+                        <span style="font-size:0.78rem; color:var(--text-muted); font-weight:700;" id="lms-lesson-counter">Aula 1 de 1</span>
+                        <button class="btn-lms-nav" id="btn-next-lesson" onclick="navigateLesson(1)">Próxima Aula <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+
+                    <!-- ÁREA DE MATERIAL DE DOWNLOAD DA FORMAÇÃO (MEDIAFIRE, DRIVE, FLP, DRUMKITS, EBOOKS, ETC.) -->
+                    <div id="lms-material-download-box" style="margin-top:0.8rem; padding:1.2rem; background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <div style="font-weight:800; font-size:0.92rem; color:#FFF;"><i class="fa-solid fa-cloud-arrow-down" style="color:var(--success); margin-right:8px;"></i> Material Complementar da Formação</div>
+                            <p style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Ficheiros FLP, Drum Kits, Ebooks, Loop Kits, Plugins ou Beats anexados.</p>
+                        </div>
+                        <a id="lms-download-material-link" href="#" target="_blank" class="btn-action btn-success" style="width:auto; text-decoration:none;">
+                            <i class="fa-solid fa-download"></i> Baixar Ficheiro do Curso
+                        </a>
+                    </div>
+
+                    <!-- ABAS DE NAVEGAÇÃO: DESCRIÇÃO E COMENTÁRIOS -->
+                    <div style="margin-top:1.5rem; border-top:1px solid var(--border-color); padding-top:1.2rem;">
+                        <div style="display:flex; gap:12px; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                            <button class="btn-lms-tab active" id="tab-btn-desc" onclick="switchLmsTab('desc')"><i class="fa-solid fa-align-left"></i> Descrição da Aula</button>
+                            <button class="btn-lms-tab" id="tab-btn-comments" onclick="switchLmsTab('comments')"><i class="fa-solid fa-comments"></i> Comentários & Dúvidas (<span id="lms-comments-count">0</span>)</button>
+                        </div>
+
+                        <!-- ABA DESCRIÇÃO -->
+                        <div id="lms-tab-desc">
+                            <h4 style="font-family:'Montserrat',sans-serif; font-size:1.05rem; font-weight:800; color:#FFF; margin-bottom:0.4rem;" id="lms-current-lesson-title">Selecione uma aula</h4>
+                            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;" id="lms-current-lesson-desc">Aproveite as videoaulas práticas do curso.</p>
+                        </div>
+
+                        <!-- ABA COMENTÁRIOS DA AULA -->
+                        <div id="lms-tab-comments" style="display:none;">
+                            <div style="display:flex; gap:10px; margin-bottom:1rem;">
+                                <input type="text" id="lms-comment-input" class="search-input" placeholder="Escreva uma pergunta ou comentário sobre esta aula..." onkeydown="if(event.key==='Enter') sendLessonComment()">
+                                <button class="btn-action btn-primary" onclick="sendLessonComment()" style="width:auto; padding:0 22px;"><i class="fa-solid fa-paper-plane"></i></button>
+                            </div>
+                            <div id="lms-comments-list" style="display:flex; flex-direction:column; gap:10px; max-height:220px; overflow-y:auto; padding-right:5px;">
+                                <p style="color:var(--text-muted); font-size:0.82rem; text-align:center;">A carregar comentários...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="lms-sidebar-section">
+                    <div class="lms-sidebar-header">
+                        <span><i class="fa-solid fa-list-ul" style="color:var(--primary); margin-right:8px;"></i> Módulos do Curso</span>
+                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;" id="lms-total-modules">0 Módulos</span>
+                    </div>
+                    <div class="lms-modules-scroll" id="lms-modules-container">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: VÍDEO DE DEMONSTRAÇÃO (PREVIEW DO PRODUTO) -->
+    <div id="demo-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); backdrop-filter:blur(15px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
+        <div style="background:#0B0B10; border:1px solid var(--border-color); border-radius:24px; width:100%; max-width:850px; padding:1.8rem; box-shadow:0 30px 60px rgba(0,0,0,0.95); position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.8rem;">
+                <h3 style="font-family:'Montserrat',sans-serif; font-size:1.2rem; font-weight:800; display:flex; align-items:center; gap:10px; color:#FFF;" id="demo-modal-title">
+                    <i class="fa-solid fa-circle-play" style="color:var(--primary);"></i> <span>Vídeo de Demonstração</span>
+                </h3>
+                <button onclick="closeDemoModal()" class="icon-btn" style="width:34px; height:34px; border:none; background:rgba(255,255,255,0.05);"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div style="position:relative; padding-top:56.25%; width:100%; background:#000; border-radius:var(--radius-md); overflow:hidden; margin-bottom:1.2rem; border:1px solid var(--border-color);">
+                <iframe id="demo-iframe-player" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <div id="demo-modal-body" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1rem; text-align:center;">
+                <!-- Conteúdo do produto inserido dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL & LÓGICA DO LEITOR DE VÍDEOS -->
+    <script>
+        // ==========================================
+        // 1. CONFIGURAÇÃO FIREBASE
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAccxyuNdi_E9Dpz0YPnWZwRC6mBU0AcVo",
+            authDomain: "loneke-site-oficial.firebaseapp.com",
+            projectId: "loneke-site-oficial",
+            storageBucket: "loneke-site-oficial.firebasestorage.app",
+            messagingSenderId: "716824234386",
+            appId: "1:716824234386:web:9bd3a8359ba388eb0dd94b",
+            measurementId: "G-MGJJPNDTM0"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let currentUser = null;
+        let userUnlockedProductIds = new Set();
+        let allProductsCache = [];
+        let unsubscribeChat = null;
+        let unsubscribeComments = null;
+
+        // Variaveis de Estado da Sala de Aula (LMS)
+        let activeCourseLessons = [];
+        let currentLessonIndex = 0;
+        let activeCourseId = null;
+
+        // ==========================================
+        // 2. VERIFICAÇÃO DE AUTENTICAÇÃO
+        // ==========================================
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = user;
+                initClientPortal();
+            }
+        });
+
+        async function initClientPortal() {
+            await loadUserProfile();
+            listenUserAccesses();
+        }
+
+        // ==========================================
+        // 3. CARREGAR E ATUALIZAR PERFIL DO CLIENTE
+        // ==========================================
+        async function loadUserProfile() {
+            if (!currentUser) return;
+
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                let uData = userDoc.exists ? userDoc.data() : {};
+
+                const fullName = uData.name || currentUser.displayName || 'Membro VIP';
+                const firstName = fullName.split(' ')[0];
+
+                document.getElementById('sidebar-user-name').innerText = fullName;
+                document.getElementById('dash-user-firstname').innerText = firstName;
+                document.getElementById('sidebar-user-role').innerText = uData.roleMusic || 'Membro VIP';
+
+                document.getElementById('prof-name').value = fullName;
+                document.getElementById('prof-email').value = currentUser.email || '';
+                document.getElementById('prof-whatsapp').value = uData.whatsapp || '';
+                document.getElementById('prof-country').value = uData.country || 'Angola';
+                document.getElementById('prof-role-music').value = uData.roleMusic || 'Produtor Musical';
+                document.getElementById('prof-bio').value = uData.bio || '';
+                document.getElementById('prof-photo-url').value = uData.photoUrl || currentUser.photoURL || '';
+
+                updateProfileAvatarPreview();
+            } catch (err) {
+                console.error("Erro ao carregar perfil:", err);
+            }
+        }
+
+        function updateProfileAvatarPreview() {
+            const url = document.getElementById('prof-photo-url').value.trim();
+            const container = document.getElementById('sidebar-avatar-container');
+            const previewForm = document.getElementById('profile-preview-avatar');
+
+            if (url) {
+                const imgHtml = `<img src="${escapeHtml(url)}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+                container.innerHTML = imgHtml;
+                previewForm.innerHTML = imgHtml;
+            } else {
+                const iconHtml = `<i class="fa-solid fa-user"></i>`;
+                container.innerHTML = iconHtml;
+                previewForm.innerHTML = iconHtml;
+            }
+        }
+
+        // UPLOAD DE FOTO DE PERFIL POR FICHEIRO LOCAL
+        function handleProfilePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('Escolha uma imagem menor que 2MB.', 'warning');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result;
+                document.getElementById('prof-photo-url').value = base64Data;
+                updateProfileAvatarPreview();
+                showToast('Imagem carregada do seu dispositivo com sucesso! Clique em "Guardar Alterações".', 'info');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveProfile(event) {
+            event.preventDefault();
+            if (!currentUser) return;
+
+            const btn = document.getElementById('btn-save-profile');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> A guardar...';
+
+            const name = document.getElementById('prof-name').value.trim();
+            const whatsapp = document.getElementById('prof-whatsapp').value.trim();
+            const country = document.getElementById('prof-country').value.trim();
+            const roleMusic = document.getElementById('prof-role-music').value;
+            const bio = document.getElementById('prof-bio').value.trim();
+            const photoUrl = document.getElementById('prof-photo-url').value.trim();
+
+            try {
+                await db.collection('users').doc(currentUser.uid).set({
+                    name: name,
+                    email: currentUser.email,
+                    whatsapp: whatsapp,
+                    country: country,
+                    roleMusic: roleMusic,
+                    bio: bio,
+                    photoUrl: photoUrl,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                showToast('Perfil atualizado com sucesso!', 'success');
+                loadUserProfile();
+            } catch (err) {
+                showToast('Erro ao atualizar perfil: ' + err.message, 'warning');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar Alterações';
+            }
+        }
+
+        // ==========================================
+        // 4. MUDAR SENHA (FIREBASE AUTH)
+        // ==========================================
+        async function changeUserPassword(event) {
+            event.preventDefault();
+            if (!currentUser) return;
+
+            const passCurrent = document.getElementById('pass-current').value;
+            const passNew = document.getElementById('pass-new').value;
+            const passConfirm = document.getElementById('pass-confirm').value;
+
+            if (passNew !== passConfirm) {
+                showToast('A nova senha e a confirmação não coincidem.', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btn-change-pass');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> A atualizar...';
+
+            try {
+                const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, passCurrent);
+                await currentUser.reauthenticateWithCredential(credential);
+
+                await currentUser.updatePassword(passNew);
+
+                showToast('Senha alterada com sucesso!', 'success');
+                document.getElementById('form-change-pass').reset();
+            } catch (err) {
+                console.error(err);
+                if (err.code === 'auth/wrong-password') {
+                    showToast('A senha atual inserida está incorreta.', 'warning');
+                } else {
+                    showToast('Erro ao trocar senha: ' + err.message, 'warning');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Atualizar Senha';
+            }
+        }
+
+        // ==========================================
+        // 5. CARREGAR PRODUTOS & PERMISSÕES
+        // ==========================================
+        function listenUserAccesses() {
+            if (!currentUser) return;
+
+            const handleUserData = () => {
+                db.collection('users').doc(currentUser.uid).get().then(uDoc => {
+                    if (uDoc.exists && uDoc.data().produtos) {
+                        const map = uDoc.data().produtos;
+                        Object.keys(map).forEach(pId => {
+                            if (map[pId] === true) userUnlockedProductIds.add(pId);
+                        });
+                    }
+                    loadCatalogAndRender();
+                }).catch(() => loadCatalogAndRender());
+            };
+
+            db.collection('user_access')
+                .where('userEmail', '==', currentUser.email.toLowerCase())
+                .where('status', '==', 'unlocked')
+                .onSnapshot(snapshot => {
+                    userUnlockedProductIds.clear();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.productId) userUnlockedProductIds.add(data.productId);
+                    });
+                    handleUserData();
+                }, err => {
+                    console.warn("Aviso Firestore (user_access):", err);
+                    handleUserData();
+                });
+        }
+
+        async function loadCatalogAndRender() {
+            try {
+                const snapshot = await db.collection('produtos').get();
+                allProductsCache = [];
+
+                snapshot.forEach(doc => {
+                    allProductsCache.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderAllProductsViews();
+            } catch (err) {
+                console.error("Erro ao carregar produtos do catálogo:", err);
+            }
+        }
+
+        function renderAllProductsViews() {
+            const unlockedGrid = document.getElementById('unlocked-products-list');
+            const lockedGrid = document.getElementById('locked-products-list');
+            const recentGrid = document.getElementById('dash-recent-products');
+
+            unlockedGrid.innerHTML = '';
+            lockedGrid.innerHTML = '';
+            recentGrid.innerHTML = '';
+
+            let unlockedCount = 0;
+            let lockedCount = 0;
+
+            allProductsCache.forEach(prod => {
+                const isUnlocked = userUnlockedProductIds.has(prod.id) || 
+                                   userUnlockedProductIds.has(prod.uuid) || 
+                                   userUnlockedProductIds.has(prod.slug);
+
+                if (isUnlocked) {
+                    unlockedCount++;
+                    const cardHtml = createProductCardHTML(prod, true);
+                    unlockedGrid.innerHTML += cardHtml;
+                    if (unlockedCount <= 3) recentGrid.innerHTML += cardHtml;
+                } else {
+                    lockedCount++;
+                    lockedGrid.innerHTML += createProductCardHTML(prod, false);
+                }
+            });
+
+            document.getElementById('kpi-unlocked-count').innerText = unlockedCount;
+            document.getElementById('kpi-locked-count').innerText = lockedCount;
+
+            if (unlockedCount === 0) {
+                unlockedGrid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--text-muted); background:var(--bg-card); border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+                    <i class="fa-solid fa-lock" style="font-size:2.5rem; color:var(--primary); margin-bottom:1rem;"></i>
+                    <p style="font-size:1rem; font-weight:700; color:#FFF;">Nenhum produto liberado ainda.</p>
+                    <p style="font-size:0.85rem;">Assim que o administrador aprovar o seu acesso, os seus beats/cursos aparecerão aqui.</p>
+                </div>`;
+                recentGrid.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem;">Nenhum conteúdo recente disponível.</p>`;
+            }
+
+            if (lockedCount === 0) {
+                lockedGrid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--text-muted); background:var(--bg-card); border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+                    <i class="fa-solid fa-circle-check" style="font-size:2.5rem; color:var(--success); margin-bottom:1rem;"></i>
+                    <p style="font-size:1rem; font-weight:700; color:#FFF;">Você possui acesso a todos os produtos do catálogo!</p>
+                </div>`;
+            }
+        }
+
+        function createProductCardHTML(p, isUnlocked) {
+            const thumb = p.imagem || p.thumb || 'img/prontos/default.jpg';
+            const price = p.precoAtual ? `${Number(p.precoAtual).toLocaleString('pt-AO')} Kz` : 'Consulte o valor';
+            const safeId = String(p.id).replace(/'/g, "\\'");
+
+            // Botão de Vídeo de Demonstração
+            const demoUrl = p.videoDemo || p.videoLink || p.previewUrl || p.videoUrl || p.url || p.link;
+            let demoBtn = '';
+            if (demoUrl) {
+                demoBtn = `
+                    <button class="btn-action btn-secondary" style="margin-bottom:8px;" onclick="openDemoPlayer('${safeId}')">
+                        <i class="fa-solid fa-circle-play" style="color:var(--primary);"></i> Ver Demonstração
+                    </button>
+                `;
+            }
+
+            let actionButton = '';
+            if (isUnlocked) {
+                const hasCourse = p.categoria === 'cursos' || 
+                                  p.tipo === 'curso' || 
+                                  (p.modulos && (Array.isArray(p.modulos) ? p.modulos.length > 0 : Object.keys(p.modulos).length > 0)) ||
+                                  (p.aulas && (Array.isArray(p.aulas) ? p.aulas.length > 0 : Object.keys(p.aulas).length > 0)) ||
+                                  p.videoLink || p.videoDemo || p.videoUrl;
+
+                if (hasCourse) {
+                    actionButton = `<button class="btn-action btn-success" onclick="openCoursePlayer('${safeId}')"><i class="fa-solid fa-graduation-cap"></i> Assistir Aulas / Curso</button>`;
+                } else if (p.linkDownload || p.linkCheckout || p.downloadUrl) {
+                    const targetLink = p.linkDownload || p.linkCheckout || p.downloadUrl;
+                    actionButton = `<a href="${escapeHtml(targetLink)}" target="_blank" class="btn-action btn-success"><i class="fa-solid fa-cloud-arrow-down"></i> Baixar Conteúdo (Mediafire/Drive)</a>`;
+                } else {
+                    actionButton = `<button class="btn-action btn-secondary" onclick="switchView('chat')"><i class="fa-solid fa-headset"></i> Pedir Ficheiro no Chat</button>`;
+                }
+            } else {
+                const whatsappMsg = encodeURIComponent(`Olá Loneke no Beat, desejo adquirir o produto: ${p.titulo}`);
+                const checkoutUrl = `https://wa.me/244924034159?text=${whatsappMsg}`;
+                actionButton = `<a href="${checkoutUrl}" target="_blank" class="btn-action btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp (${price})</a>`;
+            }
+
+            return `
+                <div class="product-card">
+                    <div class="product-thumb-container">
+                        <img src="${escapeHtml(thumb)}" class="product-thumb" alt="${escapeHtml(p.titulo)}" onerror="this.src='https://via.placeholder.com/300x180/111/fff?text=LONEKE+NO+BEAT'">
+                        <span class="product-badge ${isUnlocked ? 'badge-unlocked' : 'badge-locked'}">
+                            ${isUnlocked ? '<i class="fa-solid fa-unlock"></i> Liberado' : '<i class="fa-solid fa-lock"></i> Bloqueado'}
+                        </span>
+                    </div>
+                    <div class="product-body">
+                        <span style="font-size:0.72rem; color:var(--primary); font-weight:800; text-transform:uppercase; margin-bottom:4px;">${escapeHtml(p.categoria || 'VIP')}</span>
+                        <h4 class="product-title">${escapeHtml(p.titulo || 'Produto VIP')}</h4>
+                        <p class="product-desc">${escapeHtml(p.descricao || 'Sem descrição informada.')}</p>
+                        <div style="margin-top:auto; padding-top:10px;">
+                            ${demoBtn}
+                            ${actionButton}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Formatador Universal de Links de Vídeo
+        function formatEmbedVideoUrl(url) {
+            if (!url) return '';
+            let embedUrl = String(url).trim();
+
+            if (embedUrl.includes('<iframe')) {
+                const match = embedUrl.match(/src=["']([^"']+)["']/);
+                if (match && match[1]) embedUrl = match[1];
+            }
+
+            if (embedUrl.includes('drive.google.com')) {
+                return embedUrl.replace(/\/view(\?.*)?$/, '/preview');
+            }
+            if (embedUrl.includes('youtube.com/shorts/')) {
+                const id = embedUrl.split('youtube.com/shorts/')[1].split('?')[0].split('&')[0];
+                return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+            }
+            if (embedUrl.includes('youtu.be/')) {
+                const id = embedUrl.split('youtu.be/')[1].split('?')[0].split('&')[0];
+                return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+            }
+            if (embedUrl.includes('watch?v=')) {
+                const id = embedUrl.split('watch?v=')[1].split('&')[0];
+                return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+            }
+            if (embedUrl.includes('youtube.com/embed/')) {
+                if (!embedUrl.includes('autoplay=1')) {
+                    embedUrl += (embedUrl.includes('?') ? '&' : '?') + 'autoplay=1&rel=0';
+                }
+                return embedUrl;
+            }
+            if (embedUrl.includes('vimeo.com/')) {
+                const id = embedUrl.split('vimeo.com/')[1].split('?')[0];
+                return `https://player.vimeo.com/video/${id}?autoplay=1`;
+            }
+            return embedUrl;
+        }
+
+        // ==========================================
+        // 6. SALA DE AULA LMS COM PROCESSAMENTO E COMENTÁRIOS
+        // ==========================================
+        function showLmsProcessing() {
+            const screen = document.getElementById('lms-processing-screen');
+            if (screen) {
+                screen.style.display = 'flex';
+                screen.style.opacity = '1';
+            }
+        }
+
+        function hideLmsProcessing() {
+            const screen = document.getElementById('lms-processing-screen');
+            if (screen) {
+                screen.style.opacity = '0';
+                setTimeout(() => { screen.style.display = 'none'; }, 300);
+            }
+        }
+
+        function openCoursePlayer(productId) {
+            const prod = allProductsCache.find(p => String(p.id) === String(productId) || String(p.uuid) === String(productId) || String(p.slug) === String(productId));
+            if (!prod) {
+                showToast('Produto não encontrado.', 'warning');
+                return;
+            }
+
+            activeCourseId = prod.id;
+            document.getElementById('lms-course-title').innerText = prod.titulo || 'Curso VIP';
+            document.getElementById('lms-course-category').innerText = prod.categoria || 'Formação VIP';
+
+            activeCourseLessons = [];
+            currentLessonIndex = 0;
+
+            const modulesContainer = document.getElementById('lms-modules-container');
+            modulesContainer.innerHTML = '';
+
+            let rawModules = prod.modulos;
+            if (rawModules && typeof rawModules === 'object' && !Array.isArray(rawModules)) {
+                rawModules = Object.values(rawModules);
+            }
+
+            const courseDownloadLink = prod.linkDownload || prod.downloadUrl || prod.materialUrl;
+
+            if (Array.isArray(rawModules) && rawModules.length > 0) {
+                document.getElementById('lms-total-modules').innerText = `${rawModules.length} Módulos`;
+
+                rawModules.forEach((mod, mIdx) => {
+                    let lessonsListHtml = '';
+                    let rawAulas = mod.aulas || mod.classes || mod.lessons;
+                    if (rawAulas && typeof rawAulas === 'object' && !Array.isArray(rawAulas)) {
+                        rawAulas = Object.values(rawAulas);
+                    }
+
+                    if (Array.isArray(rawAulas) && rawAulas.length > 0) {
+                        rawAulas.forEach((aula, aIdx) => {
+                            const videoUrl = aula.youtubeUrl || aula.videoUrl || aula.link || aula.url || aula.embedUrl || aula.video;
+                            const globalIndex = activeCourseLessons.length;
+                            const lessonMaterial = aula.materialUrl || aula.downloadUrl || courseDownloadLink;
+
+                            activeCourseLessons.push({
+                                title: aula.titulo || aula.nome || aula.title || `Aula ${aIdx + 1}`,
+                                desc: aula.descricao || aula.desc || aula.description || `Aula ${aIdx + 1} do módulo ${mod.nome || mod.titulo || (mIdx + 1)}`,
+                                videoUrl: videoUrl,
+                                materialUrl: lessonMaterial,
+                                moduleName: mod.nome || mod.titulo || `Módulo ${mIdx + 1}`
+                            });
+
+                            lessonsListHtml += `
+                                <div class="lms-lesson-item" id="lms-lesson-item-${globalIndex}" onclick="loadLessonByIndex(${globalIndex})">
+                                    <i class="fa-regular fa-circle-play"></i>
+                                    <span style="flex:1; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHtml(aula.titulo || aula.nome || 'Aula ' + (aIdx + 1))}</span>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    modulesContainer.innerHTML += `
+                        <div class="lms-module-card">
+                            <div class="lms-module-title">
+                                <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i>
+                                <span>${escapeHtml(mod.nome || mod.titulo || 'Módulo ' + (mIdx + 1))}</span>
+                            </div>
+                            <div>${lessonsListHtml || '<div style="padding:10px; font-size:0.78rem; color:var(--text-muted);">Sem aulas cadastradas neste módulo.</div>'}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                let directAulas = prod.aulas || prod.classes || prod.lessons;
+                if (directAulas && typeof directAulas === 'object' && !Array.isArray(directAulas)) {
+                    directAulas = Object.values(directAulas);
+                }
+
+                if (Array.isArray(directAulas) && directAulas.length > 0) {
+                    document.getElementById('lms-total-modules').innerText = `1 Módulo`;
+                    let lessonsListHtml = '';
+
+                    directAulas.forEach((aula, aIdx) => {
+                        const videoUrl = aula.youtubeUrl || aula.videoUrl || aula.link || aula.url || aula.embedUrl || aula.video;
+                        const globalIndex = activeCourseLessons.length;
+                        const lessonMaterial = aula.materialUrl || aula.downloadUrl || courseDownloadLink;
+
+                        activeCourseLessons.push({
+                            title: aula.titulo || aula.nome || `Aula ${aIdx + 1}`,
+                            desc: aula.descricao || aula.desc || `Aula ${aIdx + 1}`,
+                            videoUrl: videoUrl,
+                            materialUrl: lessonMaterial,
+                            moduleName: 'Conteúdo do Curso'
+                        });
+
+                        lessonsListHtml += `
+                            <div class="lms-lesson-item" id="lms-lesson-item-${globalIndex}" onclick="loadLessonByIndex(${globalIndex})">
+                                <i class="fa-regular fa-circle-play"></i>
+                                <span style="flex:1; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${escapeHtml(aula.titulo || aula.nome || 'Aula ' + (aIdx + 1))}</span>
+                            </div>
+                        `;
+                    });
+
+                    modulesContainer.innerHTML = `
+                        <div class="lms-module-card">
+                            <div class="lms-module-title"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Conteúdo do Curso</div>
+                            <div>${lessonsListHtml}</div>
+                        </div>
+                    `;
+                } else {
+                    const mainVideo = prod.videoLink || prod.videoDemo || prod.previewUrl || prod.videoUrl || prod.url || prod.link;
+                    document.getElementById('lms-total-modules').innerText = `1 Conteúdo`;
+
+                    if (mainVideo) {
+                        activeCourseLessons.push({
+                            title: prod.titulo || 'Vídeo Principal',
+                            desc: prod.descricao || 'Vídeo principal do curso.',
+                            videoUrl: mainVideo,
+                            materialUrl: courseDownloadLink,
+                            moduleName: 'Conteúdo Principal'
+                        });
+
+                        modulesContainer.innerHTML = `
+                            <div class="lms-module-card">
+                                <div class="lms-module-title"><i class="fa-solid fa-video" style="color:var(--primary);"></i> Conteúdo Único</div>
+                                <div class="lms-lesson-item active" onclick="loadLessonByIndex(0)">
+                                    <i class="fa-solid fa-circle-play"></i>
+                                    <span>Assistir Vídeo Principal</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            if (activeCourseLessons.length > 0) {
+                document.getElementById('course-modal').style.display = 'flex';
+                loadLessonByIndex(0);
+            } else {
+                showToast('Nenhuma videoaula encontrada para este curso.', 'warning');
+            }
+        }
+
+        function loadLessonByIndex(index) {
+            if (index < 0 || index >= activeCourseLessons.length) return;
+
+            showLmsProcessing();
+
+            currentLessonIndex = index;
+            const lesson = activeCourseLessons[index];
+
+            const playerIframe = document.getElementById('lms-iframe-player');
+            playerIframe.src = formatEmbedVideoUrl(lesson.videoUrl);
+
+            document.getElementById('lms-current-lesson-title').innerText = `${lesson.moduleName} - ${lesson.title}`;
+            document.getElementById('lms-current-lesson-desc').innerText = lesson.desc || 'Sem descrição adicional.';
+            document.getElementById('lms-lesson-counter').innerText = `Aula ${index + 1} de ${activeCourseLessons.length}`;
+
+            // Configura o link de download do material da formação
+            const downloadBtnBox = document.getElementById('lms-material-download-box');
+            const downloadBtnLink = document.getElementById('lms-download-material-link');
+
+            if (lesson.materialUrl) {
+                downloadBtnLink.href = lesson.materialUrl;
+                downloadBtnBox.style.display = 'flex';
+            } else {
+                downloadBtnBox.style.display = 'none';
+            }
+
+            document.getElementById('btn-prev-lesson').disabled = (index === 0);
+            document.getElementById('btn-next-lesson').disabled = (index === activeCourseLessons.length - 1);
+
+            document.querySelectorAll('.lms-lesson-item').forEach(el => el.classList.remove('active'));
+            const activeElem = document.getElementById(`lms-lesson-item-${index}`);
+            if (activeElem) {
+                activeElem.classList.add('active');
+                activeElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // Oculta a tela de processamento com um breve atraso
+            setTimeout(hideLmsProcessing, 800);
+
+            // Carrega comentários da aula
+            listenLessonComments();
+        }
+
+        function navigateLesson(direction) {
+            const nextIdx = currentLessonIndex + direction;
+            if (nextIdx >= 0 && nextIdx < activeCourseLessons.length) {
+                loadLessonByIndex(nextIdx);
+            }
+        }
+
+        function switchLmsTab(tab) {
+            document.getElementById('tab-btn-desc').classList.remove('active');
+            document.getElementById('tab-btn-comments').classList.remove('active');
+            document.getElementById('lms-tab-desc').style.display = 'none';
+            document.getElementById('lms-tab-comments').style.display = 'none';
+
+            if (tab === 'desc') {
+                document.getElementById('tab-btn-desc').classList.add('active');
+                document.getElementById('lms-tab-desc').style.display = 'block';
+            } else {
+                document.getElementById('tab-btn-comments').classList.add('active');
+                document.getElementById('lms-tab-comments').style.display = 'block';
+            }
+        }
+
+        // ==========================================
+        // 7. SISTEMA DE COMENTÁRIOS DA SALA DE AULA
+        // ==========================================
+        function listenLessonComments() {
+            if (!activeCourseId) return;
+
+            const lessonDocId = `${activeCourseId}_aula_${currentLessonIndex}`;
+            const commentsContainer = document.getElementById('lms-comments-list');
+
+            if (unsubscribeComments) unsubscribeComments();
+
+            unsubscribeComments = db.collection('aulas_comentarios').doc(lessonDocId).collection('mensagens')
+                .orderBy('timestamp', 'desc')
+                .onSnapshot(snapshot => {
+                    commentsContainer.innerHTML = '';
+                    document.getElementById('lms-comments-count').innerText = snapshot.size;
+
+                    if (snapshot.empty) {
+                        commentsContainer.innerHTML = `<p style="color:var(--text-muted); font-size:0.82rem; text-align:center;">Nenhum comentário ainda. Seja o primeiro a comentar!</p>`;
+                        return;
+                    }
+
+                    snapshot.forEach(doc => {
+                        const c = doc.data();
+                        const timeStr = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleDateString('pt-AO') : 'Agora';
+
+                        commentsContainer.innerHTML += `
+                            <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:10px 14px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <span style="font-weight:800; font-size:0.85rem; color:#FFF;"><i class="fa-solid fa-user-circle" style="color:var(--primary); margin-right:6px;"></i> ${escapeHtml(c.userName)}</span>
+                                    <span style="font-size:0.72rem; color:var(--text-muted);">${timeStr}</span>
+                                </div>
+                                <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.4;">${escapeHtml(c.text)}</p>
+                            </div>
+                        `;
+                    });
+                }, err => {
+                    console.warn("Aviso Firestore (Comentários):", err);
+                });
+        }
+
+        async function sendLessonComment() {
+            if (!currentUser || !activeCourseId) return;
+
+            const input = document.getElementById('lms-comment-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            const lessonDocId = `${activeCourseId}_aula_${currentLessonIndex}`;
+
+            try {
+                const userName = document.getElementById('sidebar-user-name').innerText || 'Membro VIP';
+                await db.collection('aulas_comentarios').doc(lessonDocId).collection('mensagens').add({
+                    userName: userName,
+                    userEmail: currentUser.email,
+                    text: text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('Comentário publicado com sucesso!', 'success');
+            } catch (err) {
+                showToast('Erro ao publicar comentário: ' + err.message, 'warning');
+            }
+        }
+
+        function closeCourseModal() {
+            const playerIframe = document.getElementById('lms-iframe-player');
+            if (playerIframe) playerIframe.src = '';
+            document.getElementById('course-modal').style.display = 'none';
+        }
+
+        // ==========================================
+        // 8. VÍDEO DE DEMONSTRAÇÃO (PREVIEW PLAYER)
+        // ==========================================
+        function openDemoPlayer(productId) {
+            const prod = allProductsCache.find(p => String(p.id) === String(productId) || String(p.uuid) === String(productId) || String(p.slug) === String(productId));
+            if (!prod) {
+                showToast('Produto não encontrado.', 'warning');
+                return;
+            }
+
+            const demoUrl = prod.videoDemo || prod.videoLink || prod.previewUrl || prod.videoUrl || prod.url || prod.link;
+            if (!demoUrl) {
+                showToast('Nenhum vídeo de demonstração disponível para este produto.', 'warning');
+                return;
+            }
+
+            document.getElementById('demo-modal-title').innerHTML = `<i class="fa-solid fa-circle-play" style="color:var(--primary);"></i> <span>Demonstração: ${escapeHtml(prod.titulo || '')}</span>`;
+            
+            const iframe = document.getElementById('demo-iframe-player');
+            iframe.src = formatEmbedVideoUrl(demoUrl);
+
+            const isUnlocked = userUnlockedProductIds.has(prod.id) || userUnlockedProductIds.has(prod.uuid) || userUnlockedProductIds.has(prod.slug);
+            const whatsappMsg = encodeURIComponent(`Olá Loneke no Beat, assisti a demonstração do produto "${prod.titulo}" e quero adquirir o acesso!`);
+
+            const bodyContainer = document.getElementById('demo-modal-body');
+            bodyContainer.innerHTML = `
+                <h4 style="font-size:1.05rem; font-weight:800; color:#FFF; margin-bottom:0.4rem;">${escapeHtml(prod.titulo || '')}</h4>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.2rem; line-height:1.4;">${escapeHtml(prod.descricao || 'Vídeo de demonstração oficial do conteúdo.')}</p>
+                ${!isUnlocked ? `
+                    <a href="https://wa.me/244924034159?text=${whatsappMsg}" target="_blank" class="btn-action btn-whatsapp" style="display:inline-flex; width:auto; padding:10px 24px;">
+                        <i class="fa-brands fa-whatsapp"></i> Comprar via WhatsApp
+                    </a>
+                ` : `
+                    <span style="color:var(--success); font-size:0.85rem; font-weight:700;"><i class="fa-solid fa-circle-check"></i> Você já possui este produto liberado na sua conta!</span>
+                `}
+            `;
+
+            document.getElementById('demo-modal').style.display = 'flex';
+        }
+
+        function closeDemoModal() {
+            const iframe = document.getElementById('demo-iframe-player');
+            if (iframe) iframe.src = '';
+            document.getElementById('demo-modal').style.display = 'none';
+        }
+
+        // ==========================================
+        // 9. SISTEMA DE CHAT DO CLIENTE
+        // ==========================================
+        function listenClientChat() {
+            if (!currentUser) return;
+
+            const box = document.getElementById('client-chat-messages');
+            if (unsubscribeChat) unsubscribeChat();
+
+            unsubscribeChat = db.collection('chats').doc(currentUser.uid).collection('messages')
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snapshot => {
+                    box.innerHTML = '';
+                    if (snapshot.empty) {
+                        box.innerHTML = `<p style="color:var(--text-muted); text-align:center; margin-top:auto; margin-bottom:auto;">Inicie uma conversa diretamente com o suporte Loneke no Beat.</p>`;
+                        return;
+                    }
+
+                    snapshot.forEach(doc => {
+                        const m = doc.data();
+                        const isClient = m.sender === 'client' || m.sender === currentUser.uid;
+
+                        box.innerHTML += `
+                            <div style="align-self:${isClient ? 'flex-end' : 'flex-start'}; background:${isClient ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}; padding:10px 14px; border-radius:12px; max-width:75%; font-size:0.85rem; color:#FFF;">
+                                ${escapeHtml(m.text)}
+                            </div>
+                        `;
+                    });
+                    box.scrollTop = box.scrollHeight;
+                });
+        }
+
+        async function sendClientMessage() {
+            if (!currentUser) return;
+
+            const input = document.getElementById('client-chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+
+            try {
+                const batch = db.batch();
+                const msgRef = db.collection('chats').doc(currentUser.uid).collection('messages').doc();
+                const chatRef = db.collection('chats').doc(currentUser.uid);
+
+                batch.set(msgRef, {
+                    sender: 'client',
+                    text: text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                batch.set(chatRef, {
+                    userName: document.getElementById('sidebar-user-name').innerText || 'Membro VIP',
+                    userEmail: currentUser.email,
+                    lastMessage: text,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                await batch.commit();
+            } catch (err) {
+                showToast('Erro ao enviar mensagem: ' + err.message, 'warning');
+            }
+        }
+
+        // ==========================================
+        // 10. INTERFACE E NAVEGAÇÃO
+        // ==========================================
+        window.addEventListener('load', () => {
+            const loaderProgress = document.getElementById('loaderProgress');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 25;
+                loaderProgress.style.width = `${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('preloader').classList.add('fade-out');
+                    }, 300);
+                }
+            }, 80);
+        });
+
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (open) {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+            } else {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function switchView(tabId, menuElement) {
+            toggleSidebar(false);
+            if (menuElement) {
+                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                menuElement.classList.add('active');
+            }
+
+            document.querySelectorAll('.panel-view').forEach(view => view.classList.remove('active'));
+            document.getElementById(`view-${tabId}`).classList.add('active');
+
+            if (tabId === 'chat') listenClientChat();
+        }
+
+        function showToast(message, type = 'info', title = '') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icons = { success: 'fa-circle-check', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
+            const titles = { success: 'Sucesso', info: 'Informação', warning: 'Atenção' };
+
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type]} toast-icon"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${title || titles[type]}</div>
+                    <div class="toast-msg">${escapeHtml(message)}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('toast-out');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function logoutUser() {
+            Swal.fire({
+                title: 'Terminar Sessão?',
+                text: 'Deseja sair da sua conta VIP?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#E50914',
+                cancelButtonColor: '#1F1F2C',
+                confirmButtonText: 'Sim, Sair',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'swal2-popup-dark', title: 'swal2-title-dark' }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    auth.signOut().then(() => {
+                        window.location.href = 'login.html';
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

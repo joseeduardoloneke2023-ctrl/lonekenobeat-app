@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Aluno VIP | Loneke no Beat</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #E50914;
+            --primary-glow: rgba(229, 9, 20, 0.35);
+            --primary-hover: #ff0f1a;
+            --bg: #060608;
+            --sidebar-bg: #030304;
+            --card-bg: rgba(20, 20, 25, 0.6);
+            --card-border: rgba(255, 255, 255, 0.07);
+            --player-bg: #000000;
+            --white: #FFFFFF;
+            --text-secondary: #8a8a9e;
+            --sidebar-width: 280px;
+            --transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--white);
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            opacity: 0;
+            animation: appEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+        }
+
+        @keyframes appEntry {
+            to { opacity: 1; }
+        }
+
+        #sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 999;
+            padding: 20px 14px;
+            transition: var(--transition);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        #sidebar::-webkit-scrollbar { width: 4px; }
+        #sidebar::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2.5rem;
+            padding: 10px 5px 1.5rem 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 18px;
+            color: #888888;
+            font-size: 0.92rem;
+            font-weight: 500;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 0.4rem;
+            text-decoration: none;
+        }
+
+        .menu-item i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateX(4px);
+        }
+
+        .menu-item.active {
+            color: var(--white);
+            background: linear-gradient(90deg, rgba(229, 9, 20, 0.18) 0%, rgba(229, 9, 20, 0) 100%);
+            border-left: 3px solid var(--primary);
+            font-weight: 600;
+        }
+
+        /* CONTEÚDO PRINCIPAL */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2.5rem;
+            min-height: 100vh;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .mobile-header {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: var(--sidebar-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 98;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .panel-view {
+            display: none;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        .panel-view.active {
+            display: block;
+            animation: viewFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes viewFadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .view-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        /* BARRAS DE PESQUISA & FILTROS */
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 16px 12px 45px;
+            color: var(--white);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .filter-select {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: var(--white);
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+            min-width: 200px;
+            transition: var(--transition);
+        }
+
+        .filter-select option { background: #0d0d0d; color: var(--white); }
+
+        /* DASHBOARD WELCOME */
+        .welcome-box {
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(229,9,20,0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-box::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            filter: blur(140px);
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        .welcome-box h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 0.8rem;
+        }
+
+        .welcome-box p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: var(--primary);
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .stat-info p {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* GRID E CARDS DE PRODUTOS/CURSOS APERFEIÇOADOS */
+        .grid-produtos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(229, 9, 20, 0.15);
+        }
+
+        .product-thumb {
+            position: relative;
+            width: 100%;
+            padding-top: 62%;
+            background: #111;
+            overflow: hidden;
+        }
+
+        .product-thumb img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .product-card:hover .product-thumb img {
+            transform: scale(1.08);
+        }
+
+        /* BADGES NOS CARDS */
+        .card-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 3;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(8px);
+        }
+
+        .badge-unlocked {
+            background: rgba(0, 204, 102, 0.2);
+            color: #00ff80;
+            border: 1px solid rgba(0, 204, 102, 0.4);
+        }
+
+        .badge-locked {
+            background: rgba(229, 9, 20, 0.2);
+            color: #ff4d4d;
+            border: 1px solid rgba(229, 9, 20, 0.4);
+        }
+
+        .lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .lock-overlay i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            filter: drop-shadow(0 0 12px var(--primary-glow));
+        }
+
+        .product-info {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .product-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+            margin-bottom: 0.5rem;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .product-desc {
+            font-size: 0.83rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .product-actions {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            border: none;
+            background-color: var(--white);
+            color: #000;
+        }
+
+        .btn-action:hover {
+            background-color: #e2e2e2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.1);
+        }
+
+        .btn-primary-course {
+            background: linear-gradient(135deg, #E50914 0%, #b8070e 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary-course:hover {
+            background: linear-gradient(135deg, #ff0f1a 0%, #d60810 100%);
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.5);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-video {
+            background-color: rgba(229, 9, 20, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(229, 9, 20, 0.2);
+        }
+
+        .btn-video:hover {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+
+        .btn-buy {
+            background-color: #2ec4b6;
+            color: #000;
+        }
+
+        .btn-buy:hover {
+            background-color: #26a69a;
+            color: #000;
+        }
+
+        /* VISTA DE DETALHES DO CURSO E GRADE DE MÓDULOS */
+        .course-detail-header {
+            background: linear-gradient(180deg, rgba(229, 9, 20, 0.12) 0%, rgba(6, 6, 8, 0) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            position: relative;
+        }
+
+        .btn-back-courses {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .btn-back-courses:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-4px);
+        }
+
+        .course-detail-cover {
+            width: 220px;
+            height: 130px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        }
+
+        .course-detail-meta h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .course-detail-meta p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* GRID DE MÓDULOS EM CARD */
+        .grid-modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .module-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .module-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(229, 9, 20, 0.5);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.7), 0 0 18px var(--primary-glow);
+        }
+
+        .module-thumb {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            background: #111;
+            overflow: hidden;
+        }
+
+        .module-thumb img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .module-card:hover .module-thumb img {
+            transform: scale(1.08);
+        }
+
+        .module-play-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .module-card:hover .module-play-overlay {
+            opacity: 1;
+            background: rgba(0,0,0,0.6);
+        }
+
+        .module-play-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.2rem;
+            box-shadow: 0 0 20px var(--primary-glow);
+            transform: scale(0.8);
+            transition: var(--transition);
+        }
+
+        .module-card:hover .module-play-btn {
+            transform: scale(1);
+        }
+
+        .module-info {
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .module-tag {
+            font-size: 0.7rem;
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .module-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .module-count {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 0.3rem;
+        }
+
+        /* LMS DE AULAS COMPLETO (REFORMA VISUAL STREAMING) */
+        .lms-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(2, 2, 3, 0.98);
+            backdrop-filter: blur(20px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lms-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lms-container {
+            width: 100%;
+            max-width: 1450px;
+            height: 92vh;
+            background: #09090b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95);
+            transform: scale(0.96);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lms-overlay.active .lms-container {
+            transform: scale(1);
+        }
+
+        /* LADO ESQUERDO: VIDEO E DETALHES */
+        .lms-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            padding: 1.5rem;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .lms-main::-webkit-scrollbar { width: 5px; }
+        .lms-main::-webkit-scrollbar-thumb { background: #222; }
+
+        .lms-video-area {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background: #050505;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+        }
+
+        .lms-video-area iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%; border: none;
+        }
+
+        .lms-info-area {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .lms-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .lms-info-area h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .lms-course-name {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .lms-controls-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        /* LADO DIREITO: PLAYLIST DE AULAS DO CURSO */
+        .lms-sidebar {
+            width: 420px;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            background: #08080a;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .lms-sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0a0a0d;
+        }
+
+        .lms-sidebar-header h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-close-lms {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #ccc;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-close-lms:hover {
+            background: var(--primary);
+            color: var(--white);
+            transform: rotate(90deg);
+        }
+
+        .lms-curriculum {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .lms-curriculum::-webkit-scrollbar { width: 4px; }
+        .lms-curriculum::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+        .lms-module {
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.01);
+        }
+
+        .lms-module-header {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 14px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.88rem;
+            font-weight: 700;
+            transition: var(--transition);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .lms-module-header:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .lms-module-header span {
+            max-width: 85%;
+            line-height: 1.3;
+        }
+
+        .lms-module-header i {
+            transition: transform 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .lms-module.active .lms-module-header i {
+            transform: rotate(180deg);
+            color: var(--primary);
+        }
+
+        .lms-module-content {
+            display: none;
+            background: #040405;
+            border-top: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .lms-module.active .lms-module-content {
+            display: block;
+        }
+
+        .lms-class-item {
+            padding: 12px 18px;
+            font-size: 0.84rem;
+            color: #aaa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            transition: var(--transition);
+        }
+
+        .lms-class-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: #fff;
+        }
+
+        .lms-class-item.active {
+            background: rgba(229, 9, 20, 0.12);
+            color: #fff;
+            border-left: 3px solid var(--primary);
+            font-weight: 600;
+        }
+
+        .lms-class-item.active i.class-icon {
+            color: var(--primary);
+        }
+
+        /* PLAYER OVERLAY TRAILERS/DEMOS */
+        .player-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            opacity: 0;
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .player-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .player-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--player-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9);
+            transform: scale(0.95);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .player-overlay.active .player-container {
+            transform: scale(1);
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .player-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .btn-close-player {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-close-player:hover {
+            color: var(--white);
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%; border: none;
+        }
+
+        /* LOADERS & SUPORTE */
+        .loader-backdrop {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .loader-backdrop.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .action-loader {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(6, 6, 8, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-loader.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255,255,255,0.08);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .inner-loader {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 10;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 1rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 1100px) {
+            .lms-container {
+                flex-direction: column;
+                height: 95vh;
+            }
+            .lms-sidebar {
+                width: 100%;
+                height: 45%;
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 1.5rem; }
+            .mobile-header { display: flex; }
+        }
+
+        @media (max-width: 600px) {
+            .course-detail-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 1.2rem;
+            }
+            .course-detail-cover {
+                width: 100%;
+                height: 160px;
+            }
+            .view-title { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOADER PRINCIPAL -->
+    <div id="mainLoader" class="loader-backdrop">
+        <div class="spinner"></div>
+        <p style="font-family:'Montserrat',sans-serif; font-size:0.85rem; letter-spacing:2px; text-transform:uppercase; color:#eee;">Acessando Banco de Dados VIP...</p>
+    </div>
+
+    <!-- TELA DE PROCESSAMENTO DINÂMICA -->
+    <div id="actionLoader" class="action-loader">
+        <div class="spinner" style="width:40px; height:40px;"></div>
+        <p id="actionLoaderText" style="font-family:'Montserrat',sans-serif; font-size:0.8rem; letter-spacing:1px; color:#ccc;">Carregando Mídia...</p>
+    </div>
+
+    <div class="app-container">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar" id="sidebar">
+            <div class="logo-area">
+                <i class="fa-solid fa-circle-user" style="color:var(--primary); font-size:2.2rem;"></i>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <span id="studentName" style="font-weight:700; font-size:1.05rem;">Carregando...</span>
+                    <span id="studentEmail" style="color:var(--text-secondary); font-size:0.75rem; word-break:break-all;">carregando...</span>
+                </div>
+            </div>
+            
+            <div class="menu-item active" onclick="switchView('dashboard', this)">
+                <i class="fa-solid fa-house"></i> Início
+            </div>
+
+            <div class="menu-item" onclick="switchView('comprados', this)">
+                <i class="fa-solid fa-circle-check" style="color: #00cc66;"></i> Produtos Comprados
+            </div>
+
+            <div class="menu-item" onclick="switchView('cursos', this)">
+                <i class="fa-solid fa-graduation-cap"></i> Cursos Especiais
+            </div>
+            <div class="menu-item" onclick="switchView('drumkits', this)">
+                <i class="fa-solid fa-drum"></i> Drum Kits Elite
+            </div>
+            <div class="menu-item" onclick="switchView('flps', this)">
+                <i class="fa-solid fa-file-audio"></i> FLPs Prontos
+            </div>
+            <div class="menu-item" onclick="switchView('loops', this)">
+                <i class="fa-solid fa-music"></i> Loops & Melodias
+            </div>
+            <div class="menu-item" onclick="switchView('plugins', this)">
+                <i class="fa-solid fa-plug"></i> Plugins & VSTs
+            </div>
+            <div class="menu-item" onclick="switchView('ebooks', this)">
+                <i class="fa-solid fa-book"></i> E-books & Guias
+            </div>
+
+            <div class="menu-item" onclick="logout()" style="margin-top:auto; color:#ff4444; border-top:1px solid rgba(255,255,255,0.05); padding-top:1.5rem;">
+                <i class="fa-solid fa-right-from-bracket"></i> Terminar Sessão
+            </div>
+        </div>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div class="main-content">
+            
+            <!-- HEADER MÓVEL -->
+            <div class="mobile-header">
+                <span style="font-family:'Montserrat',sans-serif; font-weight:800; color:var(--white);">ALUNO <span style="color:var(--primary);">VIP</span></span>
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+
+            <div class="inner-loader" id="innerLoader">
+                <div class="spinner" style="width:35px; height:35px;"></div>
+            </div>
+
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="panel-view active">
+                <div class="welcome-box">
+                    <h1>Seja bem-vindo de volta!</h1>
+                    <p>Gerencie seus infoprodutos, acesse seus links de downloads ou assista seus cursos e treinos exclusivos.</p>
+                </div>
+
+                <div class="quick-stats">
+                    <div class="stat-card" style="cursor:pointer;" onclick="switchView('comprados', document.querySelector('.menu-item[onclick*=\'comprados\']'))">
+                        <div class="stat-icon" style="color:#00cc66; background:rgba(0,204,102,0.05);"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="stat-info">
+                            <h3 id="stat-adquiridos">0</h3>
+                            <p>Desbloqueados</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:var(--primary); background:rgba(229,9,20,0.05);"><i class="fa-solid fa-lock"></i></div>
+                        <div class="stat-info">
+                            <h3 id="stat-bloqueados">0</h3>
+                            <p>Trancados</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#ffaa00; background:rgba(255,170,0,0.05);"><i class="fa-solid fa-box"></i></div>
+                        <div class="stat-info">
+                            <h3 id="stat-total">0</h3>
+                            <p>Catálogo Total</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: PRODUTOS COMPRADOS -->
+            <div id="view-comprados" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-circle-check" style="color: #00cc66;"></i> Seus Produtos Adquiridos</h2>
+                <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem;">Todos os seus infoprodutos desbloqueados prontos para download e acesso imediato.</p>
+                
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-comprados" class="search-input" placeholder="Pesquisar por título ou descrição..." oninput="renderComprados()">
+                    </div>
+                    <select id="category-comprados" class="filter-select" onchange="renderComprados()">
+                        <option value="all">Todas as Categorias</option>
+                        <option value="cursos">Cursos Especiais</option>
+                        <option value="drumkits">Drum Kits Elite</option>
+                        <option value="flps">FLPs Prontos</option>
+                        <option value="loops">Loops & Melodias</option>
+                        <option value="plugins">Plugins & VSTs</option>
+                        <option value="ebooks">E-books & Guias</option>
+                    </select>
+                </div>
+
+                <div class="grid-produtos" id="comprados-list"></div>
+            </div>
+
+            <!-- VIEW: CURSOS (REFORMULADA COM DUPLA TELA: CATÁLOGO DE CURSOS E TELA DE MÓDULOS) -->
+            <div id="view-cursos" class="panel-view">
+                
+                <!-- RECIPIENTE 1: LISTA PRINCIPAL DE CURSOS -->
+                <div id="cursos-catalog-container">
+                    <h2 class="view-title"><i class="fa-solid fa-graduation-cap" style="color:var(--primary);"></i> Cursos Especiais</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem;">Assista às suas aulas exclusivas, acesse módulos e domine a produção musical.</p>
+                    
+                    <div class="filter-bar">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="search-cursos" class="search-input" placeholder="Pesquisar nos cursos disponíveis..." oninput="renderCursos()">
+                        </div>
+                    </div>
+
+                    <div class="grid-produtos" id="cursos-list"></div>
+                </div>
+
+                <!-- RECIPIENTE 2: TELA DETALHADA COM MÓDULOS EM CARD -->
+                <div id="curso-modules-container" style="display: none;">
+                    <button class="btn-back-courses" onclick="closeCourseDetail()">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar aos Cursos
+                    </button>
+
+                    <div class="course-detail-header">
+                        <img id="detailCourseImg" src="" class="course-detail-cover" alt="Curso">
+                        <div class="course-detail-meta">
+                            <span class="module-tag">TREINAMENTO VIP</span>
+                            <h1 id="detailCourseTitle">Nome do Curso</h1>
+                            <p id="detailCourseDesc">Explore os módulos e acesse o leitor de aulas exclusivo abaixo.</p>
+                        </div>
+                    </div>
+
+                    <h3 style="font-family:'Montserrat',sans-serif; font-size:1.3rem; margin-bottom:1rem; display:flex; align-items:center; gap:10px;">
+                        <i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Módulos do Curso
+                    </h3>
+
+                    <div class="grid-modules" id="modules-list"></div>
+                </div>
+
+            </div>
+
+            <!-- VIEW: DRUMKITS -->
+            <div id="view-drumkits" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-drum"></i> Drum Kits Elite</h2>
+                <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem;">Kits de bateria de alta performance para dar peso aos seus beats.</p>
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-drumkits" class="search-input" placeholder="Pesquisar nos drum kits..." oninput="renderDrumkits()">
+                    </div>
+                </div>
+                <div class="grid-produtos" id="drumkits-list"></div>
+            </div>
+
+            <!-- VIEW: FLPS -->
+            <div id="view-flps" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-file-audio"></i> FLPs Prontos</h2>
+                <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem;">Projetos completos de FL Studio prontos para estudar, remixar ou usar.</p>
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-flps" class="search-input" placeholder="Pesquisar nos FLPs..." oninput="renderFlps()">
+                    </div>
+                </div>
+                <div class="grid-produtos" id="flps-list"></div>
+            </div>
+
+            <!-- VIEW: LOOPS -->
+            <div id="view-loops" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-music"></i> Loops & Melodias</h2>
+                <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem;">Melodias e progressões de acordes raras prontas para arrastar e soltar.</p>
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-loops" class="search-input" placeholder="Pesquisar nos pacotes de loops..." oninput="renderLoops()">
+                    </div>
+                </div>
+                <div class="grid-produtos" id="loops-list"></div>
+            </div>
+
+            <!-- VIEW: PLUGINS -->
+            <div id="view-plugins" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-plug"></i> Plugins & VSTs</h2>
+                <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem;">Sintetizadores, efeitos e utilitários selecionados para o seu workflow.</p>
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-plugins" class="search-input" placeholder="Pesquisar nos plugins..." oninput="renderPlugins()">
+                    </div>
+                </div>
+                <div class="grid-produtos" id="plugins-list"></div>
+            </div>
+
+            <!-- VIEW: EBOOKS -->
+            <div id="view-ebooks" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-book"></i> E-books & Guias</h2>
+                <p style="color:var(--text-secondary); margin-bottom:1.5rem; font-size:0.95rem;">Guias de mixagem, masterização, marketing musical e estratégias de venda.</p>
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-ebooks" class="search-input" placeholder="Pesquisar nos e-books..." oninput="renderEbooks()">
+                    </div>
+                </div>
+                <div class="grid-produtos" id="ebooks-list"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TELA LEITORA DE CURSOS (LMS OVERLAY MODERNO) -->
+    <div id="lmsOverlay" class="lms-overlay">
+        <div class="lms-container">
+            <!-- PAINEL ESQUERDO: VÍDEO E DETALHES DA AULA -->
+            <div class="lms-main">
+                <div class="lms-video-area">
+                    <iframe id="lmsVideoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div class="lms-info-area">
+                    <div class="lms-header-row">
+                        <div>
+                            <span id="lmsCourseTitle" class="lms-course-name">Nome do Curso</span>
+                            <h2 id="lmsClassTitle">Título da Aula Ativa</h2>
+                        </div>
+                        <a id="lmsDownloadMaterial" href="#" target="_blank" class="btn-action btn-secondary" style="width:auto; font-size:0.8rem; padding: 8px 16px;">
+                            <i class="fa-solid fa-download"></i> Baixar Material
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PAINEL DIREITO: PLAYLIST SANFONADA POR MÓDULOS -->
+            <div class="lms-sidebar">
+                <div class="lms-sidebar-header">
+                    <h3><i class="fa-solid fa-list-ul" style="color:var(--primary);"></i> Playlist de Aulas</h3>
+                    <button class="btn-close-lms" onclick="closeLms()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="lms-curriculum" id="lmsCurriculumList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAYER OVERLAY DE VÍDEO DEMO -->
+    <div id="playerOverlay" class="player-overlay">
+        <div class="player-container">
+            <div class="player-header">
+                <h3 id="playerTitle">Demonstração</h3>
+                <button class="btn-close-player" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="video-wrapper">
+                <iframe id="videoIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SEGURANÇA BÁSICA
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.shiftKey && e.key === 'J') || (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+            }
+        });
+
+        // GESTÃO DE VIEWS
+        function switchView(targetView, menuElement) {
+            const sidebar = document.getElementById('sidebar');
+            if(sidebar) sidebar.classList.remove('open');
+
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            if(menuElement) menuElement.classList.add('active');
+
+            const iLoader = document.getElementById('innerLoader');
+            document.querySelectorAll('.panel-view').forEach(view => view.classList.remove('active'));
+            
+            iLoader.style.display = "block";
+            setTimeout(() => {
+                iLoader.style.display = "none";
+                const target = document.getElementById(`view-${targetView}`);
+                if (target) target.classList.add('active');
+                
+                // Reset na view de cursos ao navegar para outra aba
+                if(targetView === 'cursos') closeCourseDetail();
+            }, 200);
+        }
+
+        function initMobileNav() {
+            const toggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            if(toggle && sidebar) {
+                toggle.onclick = () => sidebar.classList.toggle('open');
+            }
+        }
+
+        function triggerProcessing(message, duration, callback) {
+            const loader = document.getElementById('actionLoader');
+            const text = document.getElementById('actionLoaderText');
+            text.innerText = message;
+            loader.classList.add('active');
+            
+            setTimeout(() => {
+                loader.classList.remove('active');
+                if(callback) callback();
+            }, duration);
+        }
+
+        // PLAYER DE DEMO
+        function openPlayer(videoUrl, title) {
+            triggerProcessing("Carregando vídeo demonstrativo...", 500, () => {
+                const overlay = document.getElementById('playerOverlay');
+                const iframe = document.getElementById('videoIframe');
+                const titleEl = document.getElementById('playerTitle');
+                
+                let finalUrl = videoUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ"; 
+                titleEl.innerText = title;
+                
+                if(finalUrl.includes('youtube.com') || finalUrl.includes('youtu.be')) {
+                    let videoId = '';
+                    if(finalUrl.includes('youtu.be/')) {
+                        videoId = finalUrl.split('youtu.be/')[1].split('?')[0];
+                    } else if(finalUrl.includes('v=')) {
+                        videoId = finalUrl.split('v=')[1].split('&')[0];
+                    } else if(finalUrl.includes('embed/')) {
+                        videoId = finalUrl.split('embed/')[1].split('?')[0];
+                    }
+                    finalUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+                }
+
+                iframe.src = finalUrl;
+                overlay.classList.add('active');
+            });
+        }
+
+        function closePlayer() {
+            const overlay = document.getElementById('playerOverlay');
+            overlay.classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('videoIframe').src = '';
+            }, 400);
+        }
+
+        // --- SISTEMA DE VISUALIZAÇÃO DE CURSOS E MÓDULOS ---
+        let currentCourseDetail = null;
+
+        function openCourseDetail(courseId) {
+            const curso = dadosAluno.cursos.find(c => c.id === courseId);
+            if(!curso) return;
+
+            currentCourseDetail = curso;
+            document.getElementById('detailCourseTitle').innerText = curso.titulo;
+            document.getElementById('detailCourseImg').src = curso.imagem;
+            
+            const catalog = document.getElementById('cursos-catalog-container');
+            const detail = document.getElementById('curso-modules-container');
+            const modulesList = document.getElementById('modules-list');
+
+            modulesList.innerHTML = '';
+
+            if (curso.modulos && curso.modulos.length > 0) {
+                curso.modulos.forEach((modulo, indexMod) => {
+                    const cardMod = document.createElement('div');
+                    cardMod.className = 'module-card';
+                    
+                    // Imagem do módulo utiliza a do curso ou customizada
+                    const modImg = modulo.imagem || curso.imagem;
+                    const totalAulas = modulo.aulas ? modulo.aulas.length : 0;
+
+                    cardMod.innerHTML = `
+                        <div class="module-thumb">
+                            <img src="${modImg}" alt="${modulo.nome}">
+                            <div class="module-play-overlay">
+                                <div class="module-play-btn"><i class="fa-solid fa-play"></i></div>
+                            </div>
+                        </div>
+                        <div class="module-info">
+                            <span class="module-tag">MÓDULO 0${indexMod + 1}</span>
+                            <h4 class="module-title">${modulo.nome}</h4>
+                            <div class="module-count"><i class="fa-solid fa-film"></i> ${totalAulas} Aulas exclusivas</div>
+                        </div>
+                    `;
+
+                    cardMod.onclick = () => {
+                        openLmsModule(courseId, indexMod);
+                    };
+
+                    modulesList.appendChild(cardMod);
+                });
+            } else {
+                modulesList.innerHTML = `<div class="empty-state"><p>Nenhum módulo cadastrado para este curso.</p></div>`;
+            }
+
+            catalog.style.display = "none";
+            detail.style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeCourseDetail() {
+            document.getElementById('cursos-catalog-container').style.display = "block";
+            document.getElementById('curso-modules-container').style.display = "none";
+            currentCourseDetail = null;
+        }
+
+        // --- SISTEMA LMS PLAYER (LEITOR DE AULAS + PLAYLIST) ---
+        let currentOpenCourse = null;
+
+        function openLmsModule(courseId, targetModuleIdx = 0) {
+            triggerProcessing("Abrindo portal de aulas VIP...", 600, () => {
+                const curso = dadosAluno.cursos.find(c => c.id === courseId);
+                if (!curso) return;
+
+                currentOpenCourse = curso;
+                document.getElementById('lmsCourseTitle').innerText = curso.titulo;
+                
+                const matBtn = document.getElementById('lmsDownloadMaterial');
+                if (curso.linkMaterial) {
+                    matBtn.href = curso.linkMaterial;
+                    matBtn.style.display = 'inline-flex';
+                } else {
+                    matBtn.style.display = 'none';
+                }
+
+                const listContainer = document.getElementById('lmsCurriculumList');
+                listContainer.innerHTML = '';
+
+                curso.modulos.forEach((modulo, indexMod) => {
+                    const modElement = document.createElement('div');
+                    const isActiveMod = indexMod === targetModuleIdx;
+                    modElement.className = `lms-module ${isActiveMod ? 'active' : ''}`;
+                    
+                    let classesHTML = '';
+                    if (modulo.aulas) {
+                        modulo.aulas.forEach((aula, indexAula) => {
+                            classesHTML += `
+                                <div class="lms-class-item" onclick="loadLmsVideo('${aula.url}', '${aula.titulo}', this)">
+                                    <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                                        <i class="fa-solid fa-circle-play class-icon"></i>
+                                        <span style="white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${aula.titulo}</span>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right" style="font-size:0.7rem; opacity:0.5;"></i>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    modElement.innerHTML = `
+                        <div class="lms-module-header" onclick="toggleLmsModule(this)">
+                            <span>${modulo.nome}</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div class="lms-module-content">
+                            ${classesHTML}
+                        </div>
+                    `;
+                    listContainer.appendChild(modElement);
+                });
+
+                // Carrega a primeira aula do módulo escolhido
+                if (curso.modulos[targetModuleIdx] && curso.modulos[targetModuleIdx].aulas.length > 0) {
+                    const primeiraAula = curso.modulos[targetModuleIdx].aulas[0];
+                    setTimeout(() => {
+                        const activeModDOM = document.querySelectorAll('.lms-module')[targetModuleIdx];
+                        const primeiroItemDom = activeModDOM ? activeModDOM.querySelector('.lms-class-item') : null;
+                        loadLmsVideo(primeiraAula.url, primeiraAula.titulo, primeiroItemDom);
+                    }, 100);
+                }
+
+                document.getElementById('lmsOverlay').classList.add('active');
+            });
+        }
+
+        function loadLmsVideo(url, title, element) {
+            document.querySelectorAll('.lms-class-item').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            document.getElementById('lmsClassTitle').innerText = title;
+
+            let embedUrl = url;
+            if(url.includes('youtube.com') || url.includes('youtu.be')) {
+                let videoId = '';
+                if(url.includes('youtu.be/')) {
+                    videoId = url.split('youtu.be/')[1].split('?')[0];
+                } else if(url.includes('v=')) {
+                    videoId = url.split('v=')[1].split('&')[0];
+                } else if(url.includes('embed/')) {
+                    videoId = url.split('embed/')[1].split('?')[0];
+                }
+                embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+            }
+            document.getElementById('lmsVideoIframe').src = embedUrl;
+        }
+
+        function toggleLmsModule(header) {
+            const modulo = header.parentElement;
+            modulo.classList.toggle('active');
+        }
+
+        function closeLms() {
+            const overlay = document.getElementById('lmsOverlay');
+            overlay.classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('lmsVideoIframe').src = '';
+                currentOpenCourse = null;
+            }, 400);
+        }
+
+        function logout() {
+            triggerProcessing("Encerrando sua sessão VIP de forma segura...", 1200, () => {
+                localStorage.clear();
+                window.location.href = "index.html";
+            });
+        }
+
+        // CARREGAMENTO DOS DADOS DO ALUNO
+        window.onload = function() {
+            initMobileNav();
+            
+            const studentFile = localStorage.getItem('loggedStudentFile');
+            if(!studentFile) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = studentFile;
+            
+            script.onload = function() {
+                if (typeof dadosAluno !== 'undefined') {
+                    document.getElementById('studentName').innerText = dadosAluno.usuario.nome;
+                    document.getElementById('studentEmail').innerText = dadosAluno.usuario.email;
+                    
+                    renderCursos();
+                    renderDrumkits();
+                    renderFlps();
+                    renderLoops();
+                    renderPlugins();
+                    renderEbooks();
+                    renderComprados(); 
+                    renderDashboard();  
+                    
+                    const loader = document.getElementById('mainLoader');
+                    loader.classList.add('fade-out');
+                    setTimeout(() => { loader.style.display = 'none'; }, 500);
+
+                } else {
+                    alert("Dados do aluno indisponíveis.");
+                    window.location.href = "index.html";
+                }
+            };
+
+            script.onerror = function() {
+                alert("Erro ao carregar banco de dados.");
+                window.location.href = "index.html";
+            };
+
+            document.head.appendChild(script);
+        };
+
+        // RENDER DE CURSOS (APRIMORADO)
+        function renderCursos() {
+            const list = document.getElementById('cursos-list');
+            if(!list) return;
+            list.innerHTML = '';
+            let count = 0;
+            const searchVal = document.getElementById('search-cursos').value.toLowerCase();
+
+            dadosAluno.cursos.forEach(item => {
+                if (searchVal && !item.titulo.toLowerCase().includes(searchVal)) return;
+
+                count++;
+                const card = document.createElement('div');
+                card.className = `product-card`;
+                
+                const isDesbloqueado = item.desbloqueado;
+                const badge = isDesbloqueado 
+                    ? `<span class="card-badge badge-unlocked"><i class="fa-solid fa-lock-open"></i> Desbloqueado</span>` 
+                    : `<span class="card-badge badge-locked"><i class="fa-solid fa-lock"></i> Bloqueado</span>`;
+
+                const btnAcao = isDesbloqueado 
+                    ? `<button class="btn-action btn-primary-course" onclick="openCourseDetail(${item.id})"><i class="fa-solid fa-graduation-cap"></i> Acessar Curso</button>` 
+                    : `<button class="btn-action btn-video" onclick="openPlayer('${item.video || ''}', '${item.titulo} - Demonstração')"><i class="fa-solid fa-play"></i> Demonstração</button>
+                       <a href="https://wa.me/244924034159?text=Olá Loneke, desejo desbloquear o curso: ${encodeURIComponent(item.titulo)}" target="_blank" class="btn-action btn-buy"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp</a>`;
+
+                card.innerHTML = `
+                    <div class="product-thumb">
+                        <img src="${item.imagem}" alt="${item.titulo}">
+                        ${badge}
+                        ${!isDesbloqueado ? '<div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>' : ''}
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${item.titulo}</h3>
+                        <p class="product-desc">${item.descricao || 'Domine a produção deste estilo do início ao fim com módulos completos de engenharia de som.'}</p>
+                        <div class="product-actions">
+                            ${btnAcao}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            if (count === 0) {
+                list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-magnifying-glass"></i><p>Nenhum curso correspondente encontrado.</p></div>`;
+            }
+        }
+
+        // DEMAIS RENDERS DA PLATAFORMA
+        function renderDrumkits() {
+            const list = document.getElementById('drumkits-list');
+            if(!list) return; list.innerHTML = ''; let count = 0;
+            const searchVal = document.getElementById('search-drumkits').value.toLowerCase();
+
+            dadosAluno.drumkits.forEach(item => {
+                if (item.desbloqueado) return;
+                if (searchVal && !item.titulo.toLowerCase().includes(searchVal)) return;
+
+                count++;
+                const card = document.createElement('div'); card.className = `product-card`;
+                card.innerHTML = `
+                    <div class="product-thumb">
+                        <img src="${item.imagem}" alt="${item.titulo}">
+                        <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${item.titulo}</h3>
+                        <p class="product-desc">Pack de baterias profissionais e efeitos de altíssima qualidade prontos para bombar nas pistas.</p>
+                        <div class="product-actions">
+                            <button class="btn-action btn-video" onclick="openPlayer('${item.video || ''}', '${item.titulo} - Demonstração')"><i class="fa-solid fa-music"></i> Ouvir Demonstração</button>
+                            <a href="https://wa.me/244924034159?text=Olá Loneke, desejo adquirir o Drum Kit: ${encodeURIComponent(item.titulo)}" target="_blank" class="btn-action btn-buy"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp</a>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            if (count === 0) list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-check" style="color:#00cc66;"></i><p>Todos os Drum Kits já foram liberados.</p></div>`;
+        }
+
+        function renderFlps() {
+            const list = document.getElementById('flps-list');
+            if(!list) return; list.innerHTML = ''; let count = 0;
+            const searchVal = document.getElementById('search-flps').value.toLowerCase();
+
+            dadosAluno.flps.forEach(item => {
+                if (item.desbloqueado) return;
+                if (searchVal && !item.titulo.toLowerCase().includes(searchVal)) return;
+
+                count++;
+                const card = document.createElement('div'); card.className = `product-card`;
+                card.innerHTML = `
+                    <div class="product-thumb">
+                        <img src="${item.imagem}" alt="${item.titulo}">
+                        <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${item.titulo}</h3>
+                        <p class="product-desc">Abra o projeto de produção completo e estude todas as técnicas de arranjo estrutural e mixagem.</p>
+                        <div class="product-actions">
+                            <button class="btn-action btn-video" onclick="openPlayer('${item.video || ''}', '${item.titulo} - Demonstração')"><i class="fa-solid fa-play"></i> Ver Demonstração</button>
+                            <a href="https://wa.me/244924034159?text=Olá Loneke, quero comprar o FLP do beat: ${encodeURIComponent(item.titulo)}" target="_blank" class="btn-action btn-buy"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp</a>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            if (count === 0) list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-check" style="color:#00cc66;"></i><p>Sua coleção de FLPs está completa.</p></div>`;
+        }
+
+        function renderLoops() {
+            const list = document.getElementById('loops-list');
+            if(!list) return; list.innerHTML = ''; let count = 0;
+            const searchVal = document.getElementById('search-loops').value.toLowerCase();
+
+            dadosAluno.loops.forEach(item => {
+                if (item.desbloqueado) return;
+                if (searchVal && !item.titulo.toLowerCase().includes(searchVal)) return;
+
+                count++;
+                const card = document.createElement('div'); card.className = `product-card`;
+                card.innerHTML = `
+                    <div class="product-thumb">
+                        <img src="${item.imagem}" alt="${item.titulo}">
+                        <div class="lock-overlay"><i class="fa-solid fa-lock"></i></div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-title">${item.titulo}</h3>
+                        <p class="product-desc">Melodias e progressões com separação em canais (STEMS) para acelerar a sua composição.</p>
+                        <div class="product-actions">
+                            <button class="btn-action btn-video" onclick="openPlayer('${item.video || ''}', '${item.titulo} - Demonstração')"><i class="fa-solid fa-headphones"></i> Ouvir Demonstração</button>
+                            <a href="https://wa.me/244924034159?text=Olá Loneke, desejo adquirir o pacote de Loops: ${encodeURIComponent(item.titulo)}" target="_blank" class="btn-action btn-buy"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp</a>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            if (count === 0) list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-check" style="color:#00cc66;"></i><p>Todos os pacotes de loops já foram liberados.</p></div>`;
+        }
+
+        function renderPlugins() {
+            const list = document.getElementById('plugins-list');
+            if(!list) return; list.innerHTML = ''; let count = 0;
+            const searchVal = document.getElementById('search-plugins').value.toLowerCase();
+
+            dadosAluno.plugins.forEach(item => {
+                if (item.desbloqueado) return;
+                if (searchVal && !item.titulo.toLowerCase().includes(searchVal)) return;
+
+                count++;
+                const card = document.createElement('div'); card.className = `product-card`;
+                card.innerHTML = `
+                    <div class="product-thumb"><img src="${item.imagem}" alt="${item.titulo}"><div class="lock-overlay"><i class="fa-solid fa-lock"></i></div></div>
+                    <div class="product-info">
+                        <h3 class="product-title">${item.titulo}</h3><p class="product-desc">Instrumentos VSTs e Plugins de Processamento de Sinal recomendados para beats de Elite.</p>
+                        <div class="product-actions">
+                            <button class="btn-action btn-video" onclick="openPlayer('${item.video || ''}', '${item.titulo} - Demonstração')"><i class="fa-solid fa-plug"></i> Ver Demonstração</button>
+                            <a href="https://wa.me/244924034159?text=Olá Loneke, quero comprar o pack de Plugins: ${encodeURIComponent(item.titulo)}" target="_blank" class="btn-action btn-buy"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp</a>
+                        </div>
+                    </div>`;
+                list.appendChild(card);
+            });
+            if (count === 0) list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-check" style="color:#00cc66;"></i><p>Todos os plugins e VSTs estão ativos.</p></div>`;
+        }
+
+        function renderEbooks() {
+            const list = document.getElementById('ebooks-list');
+            if(!list) return; list.innerHTML = ''; let count = 0;
+            const searchVal = document.getElementById('search-ebooks').value.toLowerCase();
+
+            if(dadosAluno.ebooks) {
+                dadosAluno.ebooks.forEach(item => {
+                    if (item.desbloqueado) return;
+                    if (searchVal && !item.titulo.toLowerCase().includes(searchVal)) return;
+
+                    count++;
+                    const card = document.createElement('div'); card.className = `product-card`;
+                    card.innerHTML = `
+                        <div class="product-thumb"><img src="${item.imagem}" alt="${item.titulo}"><div class="lock-overlay"><i class="fa-solid fa-lock"></i></div></div>
+                        <div class="product-info">
+                            <h3 class="product-title">${item.titulo}</h3><p class="product-desc">${item.descricao || 'Guias completos sobre marketing digital, lançamentos e estratégias profissionais.'}</p>
+                            <div class="product-actions">
+                                <button class="btn-action btn-video" onclick="openPlayer('${item.video || ''}', '${item.titulo} - Demonstração')"><i class="fa-solid fa-book"></i> Ver Demonstração</button>
+                                <a href="https://wa.me/244924034159?text=Olá Loneke, gostaria de comprar o e-book: ${encodeURIComponent(item.titulo)}" target="_blank" class="btn-action btn-buy"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp</a>
+                            </div>
+                        </div>`;
+                    list.appendChild(card);
+                });
+            }
+            if (count === 0) list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-check" style="color:#00cc66;"></i><p>Todos os E-books e guias já estão na sua biblioteca.</p></div>`;
+        }
+
+        function renderComprados() {
+            const list = document.getElementById('comprados-list');
+            if(!list) return; list.innerHTML = '';
+            
+            let count = 0;
+            const searchVal = document.getElementById('search-comprados').value.toLowerCase();
+            const categoryVal = document.getElementById('category-comprados').value;
+            
+            const categorias = categoryVal === 'all' 
+                ? ['cursos', 'drumkits', 'flps', 'loops', 'plugins', 'ebooks'] 
+                : [categoryVal];
+
+            categorias.forEach(cat => {
+                if (!dadosAluno[cat]) return;
+
+                dadosAluno[cat].forEach(item => {
+                    if (!item.desbloqueado) return; 
+                    
+                    const descText = item.descricao || 'Produto adquirido com acesso vitalício de download e updates garantidos.';
+                    if (searchVal && !item.titulo.toLowerCase().includes(searchVal) && !descText.toLowerCase().includes(searchVal)) {
+                        return;
+                    }
+
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = `product-card`;
+                    
+                    let botaoAcesso = (cat === 'cursos')
+                        ? `<button class="btn-action btn-primary-course" onclick="openCourseDetail(${item.id})"><i class="fa-solid fa-graduation-cap"></i> Acessar Módulos</button>`
+                        : `<a href="${item.linkDownload || '#'}" target="_blank" class="btn-action"><i class="fa-solid fa-arrow-down-to-bracket"></i> Baixar Produto</a>`;
+
+                    card.innerHTML = `
+                        <div class="product-thumb">
+                            <img src="${item.imagem}" alt="${item.titulo}">
+                            <span class="card-badge badge-unlocked"><i class="fa-solid fa-check"></i> Ativo</span>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-title">${item.titulo}</h3>
+                            <p class="product-desc">${descText}</p>
+                            <div class="product-actions">
+                                <button class="btn-action btn-secondary" onclick="openPlayer('${item.video || ''}', '${item.titulo} - Demonstração')"><i class="fa-solid fa-play"></i> Ver Demonstração</button>
+                                ${botaoAcesso}
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            });
+
+            if (count === 0) {
+                list.innerHTML = `<div class="empty-state"><i class="fa-solid fa-box-open"></i><p>Nenhum produto ativo encontrado com os filtros aplicados.</p></div>`;
+            }
+        }
+
+        function renderDashboard() {
+            let totalCursos = dadosAluno.cursos ? dadosAluno.cursos.length : 0;
+            let totalDrumkits = dadosAluno.drumkits ? dadosAluno.drumkits.length : 0;
+            let totalFlps = dadosAluno.flps ? dadosAluno.flps.length : 0;
+            let totalLoops = dadosAluno.loops ? dadosAluno.loops.length : 0;
+            let totalPlugins = dadosAluno.plugins ? dadosAluno.plugins.length : 0;
+            let totalEbooks = dadosAluno.ebooks ? dadosAluno.ebooks.length : 0;
+            let totalGeral = totalCursos + totalDrumkits + totalFlps + totalLoops + totalPlugins + totalEbooks;
+            let adquiridos = 0;
+            
+            const somarAdquiridos = (lista) => { if (lista) { lista.forEach(item => { if (item.desbloqueado) adquiridos++; }); } };
+            somarAdquiridos(dadosAluno.cursos); somarAdquiridos(dadosAluno.drumkits); somarAdquiridos(dadosAluno.flps); somarAdquiridos(dadosAluno.loops); somarAdquiridos(dadosAluno.plugins); somarAdquiridos(dadosAluno.ebooks);
+            
+            document.getElementById('stat-total').innerText = totalGeral;
+            document.getElementById('stat-adquiridos').innerText = adquiridos;
+            document.getElementById('stat-bloqueados').innerText = totalGeral - adquiridos;
+        }
+    </script>
+</body>
+</html>
