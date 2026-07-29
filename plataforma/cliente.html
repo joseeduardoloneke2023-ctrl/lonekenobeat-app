@@ -167,7 +167,6 @@
         /* LAYOUT GENERAL */
         .app-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
 
-        /* DESATIVAR TELA PRETA COMPLETAMENTE */
         #sidebarOverlay,
         .offcanvas-backdrop,
         .drawer-overlay,
@@ -465,7 +464,6 @@
                 Bem-vindo ao Portal VIP
             </div>
             <div class="nav-actions">
-                <!-- Botão direto para a loja oficial -->
                 <a href="https://lonekenobeat.com" target="_blank" class="btn-action btn-secondary" style="width:auto; text-decoration:none; padding:8px 16px;">
                     <i class="fa-solid fa-store" style="color:var(--primary);"></i> Loja Loneke no Beat
                 </a>
@@ -566,7 +564,6 @@
                 <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; max-width:800px;">
                     <form id="form-edit-profile" onsubmit="saveProfile(event)" style="display:flex; flex-direction:column; gap:1.2rem;">
                         
-                        <!-- ÁREA DA FOTO DE PERFIL COM CARREGAMENTO LOCAL -->
                         <div style="display:flex; align-items:center; gap:20px; background:rgba(255,255,255,0.03); padding:1.2rem; border-radius:var(--radius-md); border:1px solid var(--border-color); flex-wrap:wrap;">
                             <div id="profile-preview-avatar" class="user-avatar" style="width:75px; height:75px; font-size:2rem;">
                                 <i class="fa-solid fa-user"></i>
@@ -753,7 +750,7 @@
 
                         <!-- ABA COMENTÁRIOS DA AULA -->
                         <div id="lms-tab-comments" style="display:none;">
-                            <div style="display:flex; gap:10px; margin-bottom:1.2rem;">
+                            <div style="display:flex; gap:10px; margin-bottom:1rem;">
                                 <input type="text" id="lms-comment-input" class="search-input" placeholder="Escreva uma pergunta ou comentário sobre esta aula..." onkeydown="if(event.key==='Enter') sendLessonComment()">
                                 <button class="btn-action btn-primary" id="btn-send-lms-comment" onclick="sendLessonComment()" style="width:auto; padding:0 22px;">
                                     <i class="fa-solid fa-paper-plane"></i> Comentar
@@ -827,6 +824,15 @@
         let unsubscribeChat = null;
         let unsubscribeComments = null;
 
+        // Subscrições globais
+        let unsubUserDoc = null;
+        let unsubUserAccess = null;
+        let unsubCatalog = null;
+
+        // Sub-armazenamentos para junção reativa
+        let unlockedFromUserDoc = new Set();
+        let unlockedFromUserAccess = new Set();
+
         // Variáveis de Estado da Sala de Aula (LMS)
         let activeCourseLessons = [];
         let currentLessonIndex = 0;
@@ -896,7 +902,6 @@
             }
         }
 
-        // UPLOAD DE FOTO DE PERFIL POR FICHEIRO LOCAL
         function handleProfilePhotoUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -976,7 +981,6 @@
             try {
                 const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, passCurrent);
                 await currentUser.reauthenticateWithCredential(credential);
-
                 await currentUser.updatePassword(passNew);
 
                 showToast('Senha alterada com sucesso!', 'success');
@@ -995,52 +999,72 @@
         }
 
         // ==========================================
-        // 5. CARREGAR PRODUTOS & PERMISSÕES
+        // 5. ESCUTA PERMISSÕES E CATÁLOGO EM TEMPO REAL
         // ==========================================
         function listenUserAccesses() {
             if (!currentUser) return;
 
-            const handleUserData = () => {
-                db.collection('users').doc(currentUser.uid).get().then(uDoc => {
-                    if (uDoc.exists && uDoc.data().produtos) {
-                        const map = uDoc.data().produtos;
-                        Object.keys(map).forEach(pId => {
-                            if (map[pId] === true) userUnlockedProductIds.add(pId);
+            // Limpa escutadores antigos se existirem
+            if (unsubUserDoc) unsubUserDoc();
+            if (unsubUserAccess) unsubUserAccess();
+            if (unsubCatalog) unsubCatalog();
+
+            // 1. Escuta alterações no documento do próprio usuário em `users/{userId}`
+            unsubUserDoc = db.collection('users').doc(currentUser.uid).onSnapshot(uDoc => {
+                unlockedFromUserDoc.clear();
+                if (uDoc.exists) {
+                    const uData = uDoc.data();
+
+                    // Suporta mapa/objeto de produtos ex: { prodId1: true, prodId2: true }
+                    if (uData.produtos && typeof uData.produtos === 'object') {
+                        Object.keys(uData.produtos).forEach(pId => {
+                            if (uData.produtos[pId] === true || uData.produtos[pId] === 'unlocked' || uData.produtos[pId] === 'liberado') {
+                                unlockedFromUserDoc.add(String(pId));
+                            }
                         });
                     }
-                    loadCatalogAndRender();
-                }).catch(() => loadCatalogAndRender());
-            };
 
-            db.collection('user_access')
-                .where('userEmail', '==', currentUser.email.toLowerCase())
-                .where('status', '==', 'unlocked')
+                    // Suporta arrays de permissões
+                    if (Array.isArray(uData.produtosLiberados)) {
+                        uData.produtosLiberados.forEach(pId => unlockedFromUserDoc.add(String(pId)));
+                    }
+                    if (Array.isArray(uData.meusProdutos)) {
+                        uData.meusProdutos.forEach(pId => unlockedFromUserDoc.add(String(pId)));
+                    }
+                }
+                combinePermissionsAndRender();
+            }, err => console.warn("Aviso Firestore (UserDoc):", err));
+
+            // 2. Escuta a coleção global `user_access` onde userId == request.auth.uid (Conforme Firestore Security Rules)
+            unsubUserAccess = db.collection('user_access')
+                .where('userId', '==', currentUser.uid)
                 .onSnapshot(snapshot => {
-                    userUnlockedProductIds.clear();
+                    unlockedFromUserAccess.clear();
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        if (data.productId) userUnlockedProductIds.add(data.productId);
+                        // Valida status se existir
+                        if (!data.status || data.status === 'unlocked' || data.status === 'liberado' || data.status === 'active') {
+                            const pId = data.productId || data.produtoId || data.product_id;
+                            if (pId) unlockedFromUserAccess.add(String(pId));
+                        }
                     });
-                    handleUserData();
-                }, err => {
-                    console.warn("Aviso Firestore (user_access):", err);
-                    handleUserData();
-                });
-        }
+                    combinePermissionsAndRender();
+                }, err => console.warn("Aviso Firestore (user_access por userId):", err));
 
-        async function loadCatalogAndRender() {
-            try {
-                const snapshot = await db.collection('produtos').get();
+            // 3. Escuta todo o catálogo de produtos de forma reativa
+            unsubCatalog = db.collection('produtos').onSnapshot(snapshot => {
                 allProductsCache = [];
-
                 snapshot.forEach(doc => {
                     allProductsCache.push({ id: doc.id, ...doc.data() });
                 });
+                combinePermissionsAndRender();
+            }, err => console.error("Erro ao carregar produtos:", err));
+        }
 
-                renderAllProductsViews();
-            } catch (err) {
-                console.error("Erro ao carregar produtos do catálogo:", err);
-            }
+        function combinePermissionsAndRender() {
+            // Une permissões vindas do documento de usuário e da coleção de acessos
+            userUnlockedProductIds = new Set([...unlockedFromUserDoc, ...unlockedFromUserAccess]);
+            renderAllProductsViews();
         }
 
         function renderAllProductsViews() {
@@ -1056,9 +1080,16 @@
             let lockedCount = 0;
 
             allProductsCache.forEach(prod => {
-                const isUnlocked = userUnlockedProductIds.has(prod.id) || 
-                                   userUnlockedProductIds.has(prod.uuid) || 
-                                   userUnlockedProductIds.has(prod.slug);
+                const strId = String(prod.id);
+                const strUuid = prod.uuid ? String(prod.uuid) : null;
+                const strSlug = prod.slug ? String(prod.slug) : null;
+
+                // Verifica liberação por id, uuid, slug ou se o produto for marcado como gratuito
+                const isUnlocked = userUnlockedProductIds.has(strId) ||
+                                   (strUuid && userUnlockedProductIds.has(strUuid)) ||
+                                   (strSlug && userUnlockedProductIds.has(strSlug)) ||
+                                   prod.gratuito === true ||
+                                   prod.free === true;
 
                 if (isUnlocked) {
                     unlockedCount++;
@@ -1092,11 +1123,10 @@
         }
 
         function createProductCardHTML(p, isUnlocked) {
-            const thumb = p.imagem || p.thumb || 'https://via.placeholder.com/300x180/181824/FFF?text=LONEKE+NO+BEAT';
-            const price = p.precoAtual ? `${Number(p.precoAtual).toLocaleString('pt-AO')} Kz` : 'Consulte o valor';
+            const thumb = p.imagem || p.thumb || p.capa || 'https://via.placeholder.com/300x180/181824/FFF?text=LONEKE+NO+BEAT';
+            const price = p.precoAtual ? `${Number(p.precoAtual).toLocaleString('pt-AO')} Kz` : (p.preco ? `${Number(p.preco).toLocaleString('pt-AO')} Kz` : 'Consulte o valor');
             const safeId = String(p.id).replace(/'/g, "\\'");
 
-            // Botão de Vídeo de Demonstração
             const demoUrl = p.videoDemo || p.videoLink || p.previewUrl || p.videoUrl || p.url || p.link;
             let demoBtn = '';
             if (demoUrl) {
@@ -1107,19 +1137,16 @@
                 `;
             }
 
-            // Identificação se o produto É um CURSO
             const catLower = String(p.categoria || '').toLowerCase();
             const tipoLower = String(p.tipo || '').toLowerCase();
-            const isCourse = catLower === 'curso' || catLower === 'cursos' || tipoLower === 'curso' || tipoLower === 'cursos';
+            const isCourse = catLower.includes('curso') || catLower.includes('aula') || tipoLower.includes('curso') || (p.modulos && p.modulos.length > 0) || (p.aulas && p.aulas.length > 0);
 
             let actionButton = '';
             if (isUnlocked) {
                 if (isCourse) {
-                    // Botão EXCLUSIVO para CURSOS DESBLOQUEADOS
                     actionButton = `<button class="btn-action btn-success" onclick="openCoursePlayer('${safeId}')"><i class="fa-solid fa-graduation-cap"></i> Assistir Aulas / Curso</button>`;
                 } else {
-                    // Botão de BAIXAR para OUTROS PRODUTOS
-                    const targetLink = p.linkDownload || p.downloadUrl || p.linkCheckout;
+                    const targetLink = p.linkDownload || p.downloadUrl || p.linkCheckout || p.ficheiroUrl || p.arquivoUrl;
                     if (targetLink) {
                         actionButton = `<a href="${escapeHtml(targetLink)}" target="_blank" class="btn-action btn-success"><i class="fa-solid fa-cloud-arrow-down"></i> Baixar Kit / Conteúdo</a>`;
                     } else {
@@ -1127,7 +1154,6 @@
                     }
                 }
             } else {
-                // Produto BLOQUEADO
                 const whatsappMsg = encodeURIComponent(`Olá Loneke no Beat, desejo adquirir o produto: ${p.titulo}`);
                 const checkoutUrl = `https://wa.me/244924034159?text=${whatsappMsg}`;
                 actionButton = `<a href="${checkoutUrl}" target="_blank" class="btn-action btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> Comprar no WhatsApp (${price})</a>`;
@@ -1154,7 +1180,6 @@
             `;
         }
 
-        // Formatador Universal de Links de Vídeo
         function formatEmbedVideoUrl(url) {
             if (!url) return '';
             let embedUrl = String(url).trim();
@@ -1233,7 +1258,7 @@
                 rawModules = Object.values(rawModules);
             }
 
-            const courseDownloadLink = prod.linkDownload || prod.downloadUrl || prod.materialUrl;
+            const courseDownloadLink = prod.linkDownload || prod.downloadUrl || prod.materialUrl || prod.ficheiroUrl;
 
             if (Array.isArray(rawModules) && rawModules.length > 0) {
                 document.getElementById('lms-total-modules').innerText = `${rawModules.length} Módulos`;
@@ -1353,18 +1378,21 @@
             if (index < 0 || index >= activeCourseLessons.length) return;
 
             showLmsProcessing();
-
             currentLessonIndex = index;
             const lesson = activeCourseLessons[index];
 
             const playerIframe = document.getElementById('lms-iframe-player');
-            playerIframe.src = formatEmbedVideoUrl(lesson.videoUrl);
+            const targetEmbed = formatEmbedVideoUrl(lesson.videoUrl);
+
+            playerIframe.src = targetEmbed;
+
+            // Fallback de segurança para ocultar carregando se o iframe demorar
+            setTimeout(() => { hideLmsProcessing(); }, 2000);
 
             document.getElementById('lms-current-lesson-title').innerText = `${lesson.moduleName} - ${lesson.title}`;
             document.getElementById('lms-current-lesson-desc').innerText = lesson.desc || 'Sem descrição adicional.';
             document.getElementById('lms-lesson-counter').innerText = `Aula ${index + 1} de ${activeCourseLessons.length}`;
 
-            // Configura o link de download do material da formação
             const downloadBtnBox = document.getElementById('lms-material-download-box');
             const downloadBtnLink = document.getElementById('lms-download-material-link');
 
@@ -1385,9 +1413,6 @@
                 activeElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
-            setTimeout(hideLmsProcessing, 600);
-
-            // Carrega e sincroniza comentários em tempo real para esta aula específica
             listenLessonComments();
         }
 
@@ -1414,7 +1439,7 @@
         }
 
         // ==========================================
-        // 7. SISTEMA DE COMENTÁRIOS DA SALA DE AULA (VÍDEOS DO CURSO)
+        // 7. SISTEMA DE COMENTÁRIOS DA SALA DE AULA
         // ==========================================
         function listenLessonComments() {
             if (!activeCourseId) return;
@@ -1438,7 +1463,7 @@
                     snapshot.forEach(doc => {
                         const c = doc.data();
                         const timeStr = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleString('pt-AO', { dateStyle: 'short', timeStyle: 'short' }) : 'Agora';
-                        const isMyComment = currentUser && (c.userEmail === currentUser.email);
+                        const isMyComment = currentUser && (c.userId === currentUser.uid || c.userEmail === currentUser.email);
 
                         commentsContainer.innerHTML += `
                             <div style="background:${isMyComment ? 'rgba(229, 9, 20, 0.08)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isMyComment ? 'rgba(229, 9, 20, 0.3)' : 'var(--border-color)'}; border-radius:var(--radius-md); padding:12px 14px;">
@@ -1516,7 +1541,7 @@
             const iframe = document.getElementById('demo-iframe-player');
             iframe.src = formatEmbedVideoUrl(demoUrl);
 
-            const isUnlocked = userUnlockedProductIds.has(prod.id) || userUnlockedProductIds.has(prod.uuid) || userUnlockedProductIds.has(prod.slug);
+            const isUnlocked = userUnlockedProductIds.has(String(prod.id)) || (prod.uuid && userUnlockedProductIds.has(String(prod.uuid))) || (prod.slug && userUnlockedProductIds.has(String(prod.slug)));
             const whatsappMsg = encodeURIComponent(`Olá Loneke no Beat, assisti a demonstração do produto "${prod.titulo}" e quero adquirir o acesso!`);
 
             const bodyContainer = document.getElementById('demo-modal-body');
@@ -1596,6 +1621,7 @@
                 batch.set(chatRef, {
                     userName: document.getElementById('sidebar-user-name').innerText || 'Membro VIP',
                     userEmail: currentUser.email,
+                    userId: currentUser.uid,
                     lastMessage: text,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
@@ -1614,11 +1640,12 @@
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 34;
-                loaderProgress.style.width = `${progress}%`;
+                if (loaderProgress) loaderProgress.style.width = `${progress}%`;
                 if (progress >= 100) {
                     clearInterval(interval);
                     setTimeout(() => {
-                        document.getElementById('preloader').classList.add('fade-out');
+                        const preloader = document.getElementById('preloader');
+                        if (preloader) preloader.classList.add('fade-out');
                     }, 200);
                 }
             }, 60);
@@ -1642,7 +1669,8 @@
             }
 
             document.querySelectorAll('.panel-view').forEach(view => view.classList.remove('active'));
-            document.getElementById(`view-${tabId}`).classList.add('active');
+            const targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
 
             if (tabId === 'chat') listenClientChat();
         }
