@@ -33,7 +33,7 @@
             --info: #3B82F6;
 
             --bg-body: #050508;
-            --bg-sidebar: rgba(10, 10, 15, 0.92);
+            --bg-sidebar: rgba(10, 10, 15, 0.96);
             --bg-card: rgba(18, 18, 26, 0.70);
             --bg-card-hover: rgba(28, 28, 40, 0.85);
             --border-color: rgba(255, 255, 255, 0.08);
@@ -145,7 +145,7 @@
         .toast {
             pointer-events: auto; min-width: 300px; max-width: 400px;
             background: rgba(15, 15, 22, 0.95); border: 1px solid var(--border-color);
-            backdrop-filter: blur(20px); border-radius: var(--radius-md); padding: 14px 18px;
+            -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-radius: var(--radius-md); padding: 14px 18px;
             display: flex; align-items: flex-start; gap: 14px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
             transform: translateX(120%); animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -168,7 +168,7 @@
 
         #sidebarOverlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.75);
             z-index: 99; display: none; opacity: 0; transition: opacity 0.3s ease;
         }
         #sidebarOverlay.active { display: block; opacity: 1; }
@@ -178,13 +178,14 @@
             position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
             padding: 24px 16px; transition: var(--transition);
             border-right: 1px solid var(--border-color);
-            display: flex; flex-direction: column; backdrop-filter: blur(25px);
+            display: flex; flex-direction: column;
+            -webkit-backdrop-filter: blur(25px); backdrop-filter: blur(25px);
             overflow-y: auto;
         }
 
         .top-navbar {
             position: fixed; top: 0; right: 0; left: var(--sidebar-width); height: 70px;
-            background: rgba(7, 7, 10, 0.75); backdrop-filter: blur(20px);
+            background: rgba(7, 7, 10, 0.85); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color); z-index: 90;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 2.5rem; transition: var(--transition);
@@ -264,7 +265,7 @@
         .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
         .stat-card {
             background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-            padding: 1.5rem; display: flex; align-items: center; gap: 20px; transition: var(--transition); backdrop-filter: blur(12px);
+            padding: 1.5rem; display: flex; align-items: center; gap: 20px; transition: var(--transition); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
         }
         .stat-card:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.2); }
         .stat-icon { width: 55px; height: 55px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
@@ -275,7 +276,7 @@
         .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
         .product-card {
             background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-            overflow: hidden; backdrop-filter: blur(12px); transition: var(--transition); display: flex; flex-direction: column; position: relative;
+            overflow: hidden; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transition: var(--transition); display: flex; flex-direction: column; position: relative;
         }
         .product-card:hover { transform: translateY(-6px); border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
         .product-thumb-container { position: relative; width: 100%; height: 180px; overflow: hidden; background: #000; }
@@ -283,7 +284,7 @@
         .product-card:hover .product-thumb { transform: scale(1.06); }
         .product-badge {
             position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 20px;
-            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; backdrop-filter: blur(10px);
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
         }
         .badge-unlocked { background: rgba(16, 185, 129, 0.25); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.4); }
         .badge-locked { background: rgba(229, 9, 20, 0.25); color: #FF4D4D; border: 1px solid rgba(229, 9, 20, 0.4); }
@@ -307,7 +308,7 @@
         .btn-success:hover { background: var(--success); color: #FFF; }
 
         /* CHAT SYSTEM CLIENT */
-        .chat-box-container { height: 70vh; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(12px); }
+        .chat-box-container { height: 70vh; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
         .chat-messages-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #060609; }
         .chat-input-area { padding: 16px 20px; border-top: 1px solid var(--border-color); display: flex; gap: 12px; background: rgba(255,255,255,0.02); }
 
@@ -405,13 +406,23 @@
         /* SWEETALERT DARK */
         .swal2-popup-dark {
             background: #0D0D12 !important; border: 1px solid rgba(229, 9, 20, 0.3) !important;
-            border-radius: 20px !important; color: #FFFFFF !important; backdrop-filter: blur(20px);
+            border-radius: 20px !important; color: #FFFFFF !important; -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
         }
         .swal2-title-dark { font-family: 'Montserrat', sans-serif !important; font-weight: 800 !important; }
 
+        /* CORREÇÃO DO DESFOQUE NO TELEMÓVEL / MOBILE */
         @media (max-width: 1024px) {
-            #sidebar { transform: translateX(-100%); }
-            #sidebar.open { transform: translateX(0); }
+            #sidebar {
+                transform: translateX(-100%);
+                background: #0A0A0F;
+                -webkit-backdrop-filter: none !important;
+                backdrop-filter: none !important;
+            }
+            #sidebar.open {
+                transform: translateX(0);
+                -webkit-backdrop-filter: blur(25px) !important;
+                backdrop-filter: blur(25px) !important;
+            }
             .top-navbar { left: 0; }
             .main-content { margin-left: 0; padding: 1.5rem; }
             #menuToggle { display: flex !important; }
@@ -505,7 +516,7 @@
 
             <!-- 1. DASHBOARD VIEW -->
             <section id="view-dashboard" class="panel-view active">
-                <div style="background: linear-gradient(135deg, rgba(229,9,20,0.15) 0%, rgba(10,10,15,0.8) 100%); border: 1px solid rgba(229,9,20,0.3); padding: 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem; backdrop-filter: blur(10px);">
+                <div style="background: linear-gradient(135deg, rgba(229,9,20,0.15) 0%, rgba(10,10,15,0.8) 100%); border: 1px solid rgba(229,9,20,0.3); padding: 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);">
                     <h2 style="font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:800; margin-bottom:0.4rem;">Olá, <span id="dash-user-firstname">Membro</span></h2>
                     <p style="color:var(--text-muted); font-size:0.92rem;">Aceda aos seus conteúdos exclusivos, projetos de áudio, formações e fale diretamente com o produtor.</p>
                 </div>
@@ -548,7 +559,7 @@
                 <h2 class="view-title"><i class="fa-solid fa-user-pen" style="color:var(--primary);"></i> Editar Dados do Perfil</h2>
                 <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Mantenha as suas informações pessoais e de contacto atualizadas.</p>
 
-                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; backdrop-filter:blur(12px); max-width:800px;">
+                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); max-width:800px;">
                     <form id="form-edit-profile" onsubmit="saveProfile(event)" style="display:flex; flex-direction:column; gap:1.2rem;">
                         
                         <!-- ÁREA DA FOTO DE PERFIL COM CARREGAMENTO LOCAL -->
@@ -618,7 +629,7 @@
                 <h2 class="view-title"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Alterar Palavra-passe</h2>
                 <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Mantenha a sua conta VIP protegida atualizando a sua senha regularmente.</p>
 
-                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; backdrop-filter:blur(12px); max-width:550px;">
+                <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); max-width:550px;">
                     <form id="form-change-pass" onsubmit="changeUserPassword(event)" style="display:flex; flex-direction:column; gap:1.2rem;">
                         <div>
                             <label class="form-label"><i class="fa-solid fa-lock"></i> Senha Atual</label>
@@ -682,7 +693,7 @@
     </div>
 
     <!-- MODAL 1: SALA DE AULA VIP (PLATAFORMA COMPLETA DE CURSOS E AULAS COM PROCESSAMENTO E COMENTÁRIOS) -->
-    <div id="course-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); backdrop-filter:blur(15px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
+    <div id="course-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); -webkit-backdrop-filter:blur(15px); backdrop-filter:blur(15px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
         <div class="lms-modal-content">
             <div class="lms-header">
                 <div>
@@ -696,7 +707,7 @@
                 <div class="lms-player-section">
 
                     <!-- TELA DE PROCESSAMENTO DO VÍDEO -->
-                    <div id="lms-processing-screen" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,8,0.96); backdrop-filter:blur(10px); z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; transition:opacity 0.3s ease;">
+                    <div id="lms-processing-screen" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,8,0.96); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); z-index:20; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; transition:opacity 0.3s ease;">
                         <i class="fa-solid fa-compact-disc fa-spin" style="font-size:2.8rem; color:var(--primary);"></i>
                         <p style="font-weight:800; font-size:1.1rem; color:#FFF;">A processar a aula...</p>
                         <span style="font-size:0.82rem; color:var(--text-muted);">A carregar player e materiais em alta definição</span>
@@ -764,7 +775,7 @@
     </div>
 
     <!-- MODAL 2: VÍDEO DE DEMONSTRAÇÃO (PREVIEW DO PRODUTO) -->
-    <div id="demo-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); backdrop-filter:blur(15px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
+    <div id="demo-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); -webkit-backdrop-filter:blur(15px); backdrop-filter:blur(15px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
         <div style="background:#0B0B10; border:1px solid var(--border-color); border-radius:24px; width:100%; max-width:850px; padding:1.8rem; box-shadow:0 30px 60px rgba(0,0,0,0.95); position:relative;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; border-bottom:1px solid var(--border-color); padding-bottom:0.8rem;">
                 <h3 style="font-family:'Montserrat',sans-serif; font-size:1.2rem; font-weight:800; display:flex; align-items:center; gap:10px; color:#FFF;" id="demo-modal-title">
