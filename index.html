@@ -1,1 +1,50 @@
-<h1>Painel Admin - LoneKenoBeat</h1>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loneke Beat - Carregando...</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #0d0d0d;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <p>Redirecionando...</p>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Configuração do seu Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAccxyuNdi_E9Dpz0YPnWZwRC6mBU0AcVo",
+            authDomain: "loneke-site-oficial.firebaseapp.com",
+            projectId: "loneke-site-oficial",
+            storageBucket: "loneke-site-oficial.firebasestorage.app"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Verifica o estado de login
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // 🟢 USUÁRIO LOGADO: Envia para a área do cliente (ou painel principal)
+                window.location.replace("/plataforma/cliente.html");
+            } else {
+                // 🔴 USUÁRIO NÃO LOGADO: Envia para o Login
+                window.location.replace("/plataforma/login.html");
+            }
+        });
+    </script>
+</body>
+</html>
