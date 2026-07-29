@@ -465,12 +465,12 @@
                 </div>
             </section>
 
-            <!-- 2. NOVO: VIEW DE VENDAS E PRODUTOS PENDENTES DO CHECKOUT -->
+            <!-- 2. VIEW DE VENDAS E PRODUTOS PENDENTES DO CHECKOUT -->
             <section id="view-pending-sales" class="panel-view">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
                     <div>
                         <h2 class="view-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> Vendas Pendentes (Checkout)</h2>
-                        <p style="color:var(--text-muted); font-size:0.95rem;">Visualize as compras pendentes do <code>checkout.html</code> e autorize/libere o produto para cada e-mail.</p>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Visualize as compras pendentes e autorize/libere o produto para cada e-mail.</p>
                     </div>
                     <button class="btn-action btn-secondary" onclick="loadPendingSales()">
                         <i class="fa-solid fa-arrows-rotate"></i> Atualizar Lista
@@ -581,19 +581,27 @@
 
             <!-- 6. USERS VIEW -->
             <section id="view-users" class="panel-view">
-                <h2 class="view-title"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Base de Usuários Cadastrados</h2>
-                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Lista completa de contas registadas no sistema (Cadastro direto + Checkout).</p>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Base de Usuários Cadastrados</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Lista completa de contas sincronizadas do Firebase (Tabela <code>users</code>).</p>
+                    </div>
+                    <button class="btn-action btn-secondary" onclick="loadUsers()">
+                        <i class="fa-solid fa-arrows-rotate"></i> Atualizar Lista
+                    </button>
+                </div>
 
                 <div class="table-container">
                     <table class="admin-table">
                         <thead>
                             <tr>
-                                <th>Nome</th>
-                                <th>Email</th>
+                                <th>Nome / Identificador</th>
+                                <th>E-mail</th>
                                 <th>WhatsApp</th>
                                 <th>País</th>
-                                <th>Origem</th>
-                                <th style="text-align:right;">Ação</th>
+                                <th>Produtos Ativos</th>
+                                <th>Data de Registro</th>
+                                <th style="text-align:right;">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="users-table-body">
@@ -679,7 +687,7 @@
                     </div>
                 </div>
 
-                <!-- Seção Dinâmica de Módulos e Aulas (Ativada apenas quando Categoria = cursos) -->
+                <!-- Seção Dinâmica de Módulos e Aulas -->
                 <div id="cursos-section" style="display:none; background:rgba(255,255,255,0.02); padding:1.2rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
                         <label class="form-label" style="margin:0; color:var(--primary); font-size:0.85rem;"><i class="fa-solid fa-graduation-cap"></i> Módulos e Aulas do Curso</label>
@@ -796,7 +804,6 @@
         let unsubscribeProducts = null;
         let unsubscribeAccess = null;
         let unsubscribeUsers = null;
-        let unsubscribeTransactionsUsers = null;
         let unsubscribeChatList = null;
         let unsubscribeChatMessages = null;
 
@@ -807,7 +814,8 @@
             if (!user) {
                 window.location.href = 'login.html';
             } else {
-                document.getElementById('adminEmailDisplay').innerText = user.email || 'ADMINISTRADOR';
+                const adminEmailDisplay = document.getElementById('adminEmailDisplay');
+                if (adminEmailDisplay) adminEmailDisplay.innerText = user.email || 'ADMINISTRADOR';
                 switchView('dashboard');
             }
         });
@@ -820,7 +828,7 @@
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 25;
-                loaderProgress.style.width = `${progress}%`;
+                if (loaderProgress) loaderProgress.style.width = `${progress}%`;
                 if (progress >= 100) {
                     clearInterval(interval);
                     setTimeout(() => {
@@ -833,6 +841,7 @@
 
         function toggleSidebar(open) {
             const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
             if (open === undefined) {
                 sidebar.classList.toggle('open');
             } else if (open) {
@@ -844,6 +853,7 @@
 
         function showToast(message, type = 'info', title = '') {
             const container = document.getElementById('toast-container');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             const icons = { success: 'fa-circle-check', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
@@ -874,11 +884,21 @@
         }
 
         function escapeJsArg(str) {
-            if (!str) return '';
+            if (str === null || str === undefined) return '';
             return String(str)
                 .replace(/\\/g, '\\\\')
                 .replace(/'/g, "\\'")
-                .replace(/"/g, '\\"');
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '');
+        }
+
+        function parseFirebaseDate(dateVal) {
+            if (!dateVal) return new Date();
+            if (typeof dateVal.toDate === 'function') return dateVal.toDate();
+            if (dateVal instanceof Date) return dateVal;
+            if (typeof dateVal === 'number') return new Date(dateVal);
+            return new Date(dateVal);
         }
 
         function switchView(tabId, menuElement) {
@@ -930,7 +950,7 @@
         }
 
         // ==========================================
-        // 4. MÓDULOS E AULAS (DINÂMICO PARA CURSOS)
+        // 4. MÓDULOS E AULAS (CURSOS)
         // ==========================================
         function toggleCursosSection() {
             const cat = document.getElementById('p-categoria').value;
@@ -1110,7 +1130,7 @@
                 document.getElementById('modal-title-text').innerText = 'Editar Produto';
 
                 document.getElementById('p-titulo').value = p.titulo || '';
-                document.getElementById('p-categoria').value = p.categoria || 'beats';
+                document.getElementById('p-categoria').value = (p.categoria || 'beats').toLowerCase();
                 document.getElementById('p-slug').value = p.slug || '';
                 document.getElementById('p-vendas').value = p.vendas || 0;
                 document.getElementById('p-precoAntigo').value = p.precoAntigo || '';
@@ -1252,20 +1272,23 @@
             else if (period === 'week') startDate.setDate(now.getDate() - 7);
             else if (period === 'month') startDate.setMonth(now.getMonth() - 1);
             else if (period === 'semester') startDate.setMonth(now.getMonth() - 6);
-            else if (period === 'year') startDate.getFullYear(now.getFullYear() - 1);
+            else if (period === 'year') startDate.setFullYear(now.getFullYear() - 1);
 
             unsubscribeDashboard = db.collection('transactions')
-                .where('status', 'in', ['completed', 'approved'])
                 .onSnapshot(snapshot => {
                     let totalRevenue = 0;
                     let totalSales = 0;
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        const txDate = data.createdAt ? data.createdAt.toDate() : new Date();
-                        if (txDate >= startDate) {
-                            totalRevenue += Number(data.amount || data.price || 0);
-                            totalSales++;
+                        const status = data.status || '';
+                        const isApproved = ['completed', 'approved', 'concluido', 'pago'].includes(status.toLowerCase());
+                        if (isApproved) {
+                            const txDate = parseFirebaseDate(data.createdAt);
+                            if (txDate >= startDate) {
+                                totalRevenue += Number(data.amount || data.price || data.preco || 0);
+                                totalSales++;
+                            }
                         }
                     });
 
@@ -1275,18 +1298,24 @@
                     console.error("Erro ao ler faturamento:", err);
                 });
 
-            // Atualiza KPI com total único de clientes
             Promise.all([
                 db.collection('users').get(),
+                db.collection('user_access').get(),
                 db.collection('transactions').get()
-            ]).then(([usersSnap, txSnap]) => {
+            ]).then(([usersSnap, accessSnap, txSnap]) => {
                 const uniqueEmails = new Set();
                 usersSnap.forEach(doc => {
-                    if (doc.data().email) uniqueEmails.add(doc.data().email.toLowerCase());
+                    const u = doc.data();
+                    const e = u.email || u.userEmail;
+                    if (e) uniqueEmails.add(e.toLowerCase().trim());
+                });
+                accessSnap.forEach(doc => {
+                    const e = doc.data().userEmail || doc.data().email;
+                    if (e) uniqueEmails.add(e.toLowerCase().trim());
                 });
                 txSnap.forEach(doc => {
                     const e = doc.data().userEmail || doc.data().email;
-                    if (e && e !== 'N/A') uniqueEmails.add(e.toLowerCase());
+                    if (e && e !== 'N/A') uniqueEmails.add(e.toLowerCase().trim());
                 });
                 document.getElementById('kpi-users').innerText = uniqueEmails.size;
             }).catch(() => {
@@ -1295,7 +1324,7 @@
         }
 
         // ==========================================
-        // 9. NOVO: GERENCIAR VENDAS PENDENTES DO CHECKOUT
+        // 9. GERENCIAR VENDAS PENDENTES DO CHECKOUT
         // ==========================================
         function loadPendingSales() {
             const tbody = document.getElementById('pending-sales-table-body');
@@ -1304,7 +1333,6 @@
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Buscando pedidos no banco...</td></tr>`;
 
             unsubscribePendingSales = db.collection('transactions')
-                .orderBy('createdAt', 'desc')
                 .onSnapshot(snapshot => {
                     tbody.innerHTML = '';
                     if (snapshot.empty) {
@@ -1313,18 +1341,24 @@
                     }
 
                     let pendingCount = 0;
+                    const docsList = [];
 
                     snapshot.forEach(doc => {
-                        const t = doc.data();
-                        const txId = doc.id;
+                        docsList.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    docsList.sort((a, b) => parseFirebaseDate(b.createdAt) - parseFirebaseDate(a.createdAt));
+
+                    docsList.forEach(t => {
+                        const txId = t.id;
                         const email = t.userEmail || t.email || 'N/A';
                         const productTitle = t.productTitle || t.titulo || 'Produto Checkout';
                         const productId = t.productId || t.produtoId || '';
                         const amount = t.amount || t.preco || 0;
-                        const status = t.status || 'pending';
+                        const status = (t.status || 'pending').toLowerCase();
                         const proof = t.proofUrl || t.comprovativo || t.paymentMethod || 'Checkout';
                         
-                        const dateFormatted = t.createdAt ? new Date(t.createdAt.toDate()).toLocaleString('pt-AO') : 'Hoje';
+                        const dateFormatted = t.createdAt ? parseFirebaseDate(t.createdAt).toLocaleString('pt-AO') : 'Hoje';
 
                         const isPending = (status === 'pending' || status === 'pendente' || status === 'aguardando');
 
@@ -1334,7 +1368,7 @@
                             ? `<span style="background:rgba(245,158,11,0.15); color:var(--warning); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem;"><i class="fa-solid fa-clock"></i> Pendente</span>`
                             : `<span style="background:rgba(16,185,129,0.15); color:var(--success); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem;"><i class="fa-solid fa-check"></i> Autorizada</span>`;
 
-                        const proofDisplay = proof.startsWith('http')
+                        const proofDisplay = String(proof).startsWith('http')
                             ? `<a href="${escapeHtml(proof)}" target="_blank" style="color:var(--info); text-decoration:underline;"><i class="fa-solid fa-paperclip"></i> Ver Comprovativo</a>`
                             : `<span style="color:var(--text-muted); font-size:0.8rem;">${escapeHtml(proof)}</span>`;
 
@@ -1397,14 +1431,12 @@
                     try {
                         const batch = db.batch();
 
-                        // 1. Atualizar transação para 'completed'
                         const txRef = db.collection('transactions').doc(txId);
                         batch.update(txRef, {
                             status: 'completed',
                             approvedAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
 
-                        // 2. Registar em 'user_access'
                         const cleanDocId = `${email.replace(/[^a-z0-9]/gi, '_')}_${productId || 'geral'}`;
                         const accessRef = db.collection('user_access').doc(cleanDocId);
                         batch.set(accessRef, {
@@ -1416,13 +1448,16 @@
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
 
-                        // 3. Atualizar diretamente na conta do usuário (se cadastrado)
                         const userQuery = await db.collection('users').where('email', '==', email).limit(1).get();
                         if (!userQuery.empty) {
                             const userDocRef = db.collection('users').doc(userQuery.docs[0].id);
-                            const updateMap = {};
-                            if (productId) updateMap[`produtos.${productId}`] = true;
-                            batch.set(userDocRef, updateMap, { merge: true });
+                            if (productId) {
+                                batch.set(userDocRef, {
+                                    produtos: {
+                                        [productId]: true
+                                    }
+                                }, { merge: true });
+                            }
                         }
 
                         await batch.commit();
@@ -1446,16 +1481,18 @@
             if (unsubscribeProducts) unsubscribeProducts();
 
             unsubscribeProducts = db.collection('produtos')
-                .orderBy('createdAt', 'desc')
                 .onSnapshot(snapshot => {
                     tbody.innerHTML = '';
                     if (snapshot.empty) {
                         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum produto cadastrado na tabela de produtos.</td></tr>`;
                         return;
                     }
-                    snapshot.forEach(doc => {
-                        const p = doc.data();
 
+                    const prods = [];
+                    snapshot.forEach(doc => prods.push({ id: doc.id, ...doc.data() }));
+                    prods.sort((a, b) => parseFirebaseDate(b.createdAt) - parseFirebaseDate(a.createdAt));
+
+                    prods.forEach(p => {
                         const oldPriceHtml = p.precoAntigo && p.precoAntigo > 0 ? `<span class="price-old">${Number(p.precoAntigo).toLocaleString('pt-AO')} Kz</span>` : '';
                         const newPriceHtml = `<span class="price-new">${p.precoAtual ? Number(p.precoAtual).toLocaleString('pt-AO') + ' Kz' : 'Grátis'}</span>`;
 
@@ -1483,8 +1520,8 @@
                                 </td>
                                 <td style="text-align:right;">
                                     <div style="display:inline-flex; gap:6px;">
-                                        <button class="btn-action btn-secondary btn-icon-only" onclick="editProduct('${doc.id}')" title="Editar Produto"><i class="fa-solid fa-pen-to-square" style="color:var(--info);"></i></button>
-                                        <button class="btn-action btn-danger btn-icon-only" onclick="deleteProduct('${doc.id}')" title="Eliminar Produto"><i class="fa-solid fa-trash"></i></button>
+                                        <button class="btn-action btn-secondary btn-icon-only" onclick="editProduct('${p.id}')" title="Editar Produto"><i class="fa-solid fa-pen-to-square" style="color:var(--info);"></i></button>
+                                        <button class="btn-action btn-danger btn-icon-only" onclick="deleteProduct('${p.id}')" title="Eliminar Produto"><i class="fa-solid fa-trash"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -1521,76 +1558,163 @@
         // ==========================================
         // 11. LIBERAÇÃO DE ACESSOS POR E-MAIL E PERFIL
         // ==========================================
-        function loadAccessRequests() {
+        async function loadAccessRequests() {
             const tbody = document.getElementById('access-table-body');
             if (unsubscribeAccess) unsubscribeAccess();
 
-            unsubscribeAccess = db.collection('user_access')
-                .orderBy('requestedAt', 'desc')
-                .onSnapshot(snapshot => {
-                    tbody.innerHTML = '';
-                    if (snapshot.empty) {
-                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum registro de acesso configurado.</td></tr>`;
-                        return;
-                    }
-                    snapshot.forEach(doc => {
-                        const acc = doc.data();
-                        const currentStatus = acc.status || 'locked';
-                        const isUnlocked = currentStatus === 'unlocked';
-                        const cleanWhatsapp = acc.whatsapp ? String(acc.whatsapp).replace(/\D/g, '') : '';
-                        const clientIdentifier = acc.userEmail ? `${escapeHtml(acc.userName || 'Cliente')} <br><span style="font-size:0.75rem; color:var(--primary);"><i class="fa-regular fa-envelope"></i> ${escapeHtml(acc.userEmail)}</span>` : escapeHtml(acc.userName || acc.userId || 'Utilizador');
-                        
-                        const safeUserId = escapeJsArg(acc.userId || '');
-                        const safeProductId = escapeJsArg(acc.productId || '');
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando permissões e acessos...</td></tr>`;
 
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${clientIdentifier}</td>
-                                <td><strong>${escapeHtml(acc.productTitle || acc.productId || 'Produto VIP')}</strong></td>
-                                <td>
-                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
-                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(acc.whatsapp || 'N/A')}
-                                    </a>
-                                </td>
-                                <td>
-                                    <span style="padding:4px 10px; border-radius:6px; font-size:0.75rem; background:${isUnlocked ? 'rgba(16,185,129,0.15); color:var(--success);' : 'rgba(245,158,11,0.15); color:var(--warning);'}">
-                                        ${isUnlocked ? 'Acesso Liberado' : 'Acesso Revogado'}
-                                    </span>
-                                </td>
-                                <td style="text-align:right;">
-                                    <button class="btn-action ${isUnlocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAccess('${doc.id}', '${currentStatus}', '${safeUserId}', '${safeProductId}')">
-                                        ${isUnlocked ? 'Revogar Acesso' : 'Liberar Acesso'}
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                }, err => {
-                    console.error(err);
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar solicitações.</td></tr>`;
+            try {
+                const [accessSnap, usersSnap, prodSnap] = await Promise.all([
+                    db.collection('user_access').get(),
+                    db.collection('users').get(),
+                    db.collection('produtos').get()
+                ]);
+
+                const productTitlesMap = {};
+                prodSnap.forEach(pDoc => {
+                    const pData = pDoc.data();
+                    productTitlesMap[pDoc.id] = pData.titulo || pData.title || pDoc.id;
+                    if (pData.uuid) productTitlesMap[pData.uuid] = pData.titulo || pData.title;
                 });
+
+                const accessMap = new Map();
+
+                // 1. Processar coleção user_access
+                accessSnap.forEach(doc => {
+                    const acc = doc.data();
+                    const key = `${acc.userEmail || acc.userId}_${acc.productId}`;
+                    accessMap.set(key, {
+                        id: doc.id,
+                        userId: acc.userId || '',
+                        userEmail: acc.userEmail || '',
+                        userName: acc.userName || 'Cliente',
+                        whatsapp: acc.whatsapp || '',
+                        productId: acc.productId || '',
+                        productTitle: acc.productTitle || productTitlesMap[acc.productId] || acc.productId || 'Produto',
+                        status: acc.status || 'locked',
+                        requestedAt: acc.requestedAt ? parseFirebaseDate(acc.requestedAt) : new Date()
+                    });
+                });
+
+                // 2. Incluir acessos gravados diretamente na tabela 'users' (produtos.{productId} = true)
+                usersSnap.forEach(uDoc => {
+                    const uData = uDoc.data();
+                    const uEmail = uData.email || uData.userEmail || '';
+                    const uName = uData.name || uData.nome || uData.displayName || 'Cliente';
+                    const uWhatsapp = uData.whatsapp || uData.telefone || '';
+
+                    if (uData.produtos && typeof uData.produtos === 'object') {
+                        Object.keys(uData.produtos).forEach(pId => {
+                            const isUnlocked = uData.produtos[pId] === true;
+                            const key = `${uEmail || uDoc.id}_${pId}`;
+
+                            if (!accessMap.has(key) && isUnlocked) {
+                                accessMap.set(key, {
+                                    id: `${uDoc.id}_${pId}`,
+                                    userId: uDoc.id,
+                                    userEmail: uEmail,
+                                    userName: uName,
+                                    whatsapp: uWhatsapp,
+                                    productId: pId,
+                                    productTitle: productTitlesMap[pId] || pId,
+                                    status: 'unlocked',
+                                    requestedAt: uData.createdAt ? parseFirebaseDate(uData.createdAt) : new Date()
+                                });
+                            }
+                        });
+                    }
+                });
+
+                tbody.innerHTML = '';
+                if (accessMap.size === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum registro de acesso configurado.</td></tr>`;
+                    return;
+                }
+
+                const accessList = Array.from(accessMap.values());
+                accessList.sort((a, b) => b.requestedAt - a.requestedAt);
+
+                accessList.forEach(acc => {
+                    const currentStatus = acc.status || 'locked';
+                    const isUnlocked = currentStatus === 'unlocked';
+                    const cleanWhatsapp = acc.whatsapp ? String(acc.whatsapp).replace(/\D/g, '') : '';
+                    const clientIdentifier = acc.userEmail 
+                        ? `${escapeHtml(acc.userName || 'Cliente')} <br><span style="font-size:0.75rem; color:var(--primary);"><i class="fa-regular fa-envelope"></i> ${escapeHtml(acc.userEmail)}</span>` 
+                        : escapeHtml(acc.userName || acc.userId || 'Utilizador');
+
+                    const safeUserId = escapeJsArg(acc.userId || '');
+                    const safeUserEmail = escapeJsArg(acc.userEmail || '');
+                    const safeProductId = escapeJsArg(acc.productId || '');
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${clientIdentifier}</td>
+                            <td><strong>${escapeHtml(acc.productTitle)}</strong></td>
+                            <td>
+                                ${cleanWhatsapp ? `
+                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(acc.whatsapp)}
+                                    </a>
+                                ` : '<span style="color:var(--text-muted);">N/A</span>'}
+                            </td>
+                            <td>
+                                <span style="padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; background:${isUnlocked ? 'rgba(16,185,129,0.15); color:var(--success);' : 'rgba(245,158,11,0.15); color:var(--warning);'}">
+                                    ${isUnlocked ? '<i class="fa-solid fa-lock-open"></i> Liberado' : '<span style="color:var(--warning);"><i class="fa-solid fa-lock"></i> Revogado</span>'}
+                                </span>
+                            </td>
+                            <td style="text-align:right;">
+                                <button class="btn-action ${isUnlocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAccess('${acc.id}', '${currentStatus}', '${safeUserId}', '${safeUserEmail}', '${safeProductId}')">
+                                    ${isUnlocked ? 'Revogar Acesso' : 'Liberar Acesso'}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+            } catch (err) {
+                console.error("Erro ao carregar solicitações de acesso:", err);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar dados de acesso.</td></tr>`;
+            }
         }
 
-        async function toggleAccess(id, currentStatus, userId, productId) {
+        async function toggleAccess(id, currentStatus, userId, userEmail, productId) {
             const newStatus = currentStatus === 'unlocked' ? 'locked' : 'unlocked';
             
             try {
-                // 1. Atualiza na coleção 'user_access'
-                await db.collection('user_access').doc(id).update({
+                const batch = db.batch();
+
+                // 1. Atualizar na coleção user_access
+                const cleanDocId = id.includes('_') ? id : `${userEmail.replace(/[^a-z0-9]/gi, '_')}_${productId}`;
+                const accessRef = db.collection('user_access').doc(cleanDocId);
+                batch.set(accessRef, {
                     status: newStatus,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                }, { merge: true });
 
-                // 2. Se o ID do usuário estiver disponível, atualiza a permissão diretamente no documento do cliente
-                if (userId && productId) {
-                    const userRef = db.collection('users').doc(userId);
-                    const updateObj = {};
-                    updateObj[`produtos.${productId}`] = (newStatus === 'unlocked');
-                    await userRef.set(updateObj, { merge: true });
+                // 2. Atualizar na tabela 'users' (produtos.{productId} = true/false)
+                let targetDocId = userId;
+                if (!targetDocId && userEmail) {
+                    const uQuery = await db.collection('users').where('email', '==', userEmail).limit(1).get();
+                    if (!uQuery.empty) targetDocId = uQuery.docs[0].id;
                 }
 
-                showToast(`Acesso do produto ${newStatus === 'unlocked' ? 'liberado na conta do cliente' : 'revogado'} com sucesso!`, 'success');
+                if (targetDocId && productId) {
+                    const userRef = db.collection('users').doc(targetDocId);
+                    batch.set(userRef, {
+                        produtos: {
+                            [productId]: (newStatus === 'unlocked')
+                        }
+                    }, { merge: true });
+                }
+
+                await batch.commit();
+
+                showToast(`Acesso ao produto ${newStatus === 'unlocked' ? 'liberado' : 'revogado'} com sucesso!`, 'success');
+                loadAccessRequests();
+
             } catch (err) {
+                console.error("Erro ao alterar acesso:", err);
                 showToast('Erro ao atualizar permissão: ' + err.message, 'warning');
             }
         }
@@ -1602,14 +1726,23 @@
             const datalist = document.getElementById('registered-emails-list');
             datalist.innerHTML = '';
             try {
+                const uniqueEmails = new Set();
                 const usersSnap = await db.collection('users').get();
                 usersSnap.forEach(uDoc => {
-                    const email = uDoc.data().email;
-                    if (email) {
-                        const opt = document.createElement('option');
-                        opt.value = email;
-                        datalist.appendChild(opt);
-                    }
+                    const u = uDoc.data();
+                    const e = u.email || u.userEmail;
+                    if (e) uniqueEmails.add(e.toLowerCase().trim());
+                });
+                const txSnap = await db.collection('transactions').get();
+                txSnap.forEach(tDoc => {
+                    const e = tDoc.data().userEmail || tDoc.data().email;
+                    if (e && e !== 'N/A') uniqueEmails.add(e.toLowerCase().trim());
+                });
+
+                uniqueEmails.forEach(email => {
+                    const opt = document.createElement('option');
+                    opt.value = email;
+                    datalist.appendChild(opt);
                 });
             } catch (err) {
                 console.warn('Não foi possível carregar sugestões de e-mail:', err);
@@ -1623,16 +1756,19 @@
             productsList.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">Carregando produtos...</p>`;
 
             try {
-                const pSnap = await db.collection('produtos').orderBy('titulo', 'asc').get();
+                const pSnap = await db.collection('produtos').get();
                 if (pSnap.empty) {
                     productsList.innerHTML = `<p style="color:var(--warning); font-size:0.85rem; text-align:center;">Nenhum produto cadastrado para liberar.</p>`;
                     return;
                 }
 
+                const prods = [];
+                pSnap.forEach(pDoc => prods.push({ id: pDoc.id, ...pDoc.data() }));
+                prods.sort((a, b) => (a.titulo || '').localeCompare(b.titulo || ''));
+
                 productsList.innerHTML = '';
-                pSnap.forEach(pDoc => {
-                    const p = pDoc.data();
-                    const pId = pDoc.id;
+                prods.forEach(p => {
+                    const pId = p.id;
                     const pTitle = p.titulo || 'Produto sem título';
                     const pCat = p.categoria || 'geral';
 
@@ -1719,13 +1855,13 @@
                 const userQuery = await db.collection('users').where('email', '==', emailInput).limit(1).get();
                 if (!userQuery.empty) {
                     const uData = userQuery.docs[0].data();
-                    clientName = uData.name || clientName;
-                    clientWhatsapp = uData.whatsapp || '';
+                    clientName = uData.name || uData.nome || uData.displayName || clientName;
+                    clientWhatsapp = uData.whatsapp || uData.telefone || '';
                     userId = userQuery.docs[0].id;
                 }
 
                 const batch = db.batch();
-                const userProductsUpdate = {};
+                const userProductsUpdate = { produtos: {} };
                 let countGranted = 0;
 
                 allBoxes.forEach(box => {
@@ -1752,10 +1888,7 @@
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
 
-                        userProductsUpdate[`produtos.${productId}`] = true;
-                        if (productCategory) {
-                            userProductsUpdate[`produtos.${productCategory}`] = true;
-                        }
+                        userProductsUpdate.produtos[productId] = true;
                     } else {
                         batch.set(docRef, {
                             userEmail: emailInput,
@@ -1769,7 +1902,7 @@
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
 
-                        userProductsUpdate[`produtos.${productId}`] = false;
+                        userProductsUpdate.produtos[productId] = false;
                     }
                 });
 
@@ -1782,6 +1915,7 @@
 
                 showToast(`Sucesso! ${countGranted} produto(s) liberado(s) para o e-mail ${emailInput}.`, 'success');
                 closeGrantAccessModal();
+                loadAccessRequests();
 
             } catch (err) {
                 console.error("Erro ao liberar acessos:", err);
@@ -1800,23 +1934,29 @@
             if (unsubscribeChatList) unsubscribeChatList();
 
             unsubscribeChatList = db.collection('chats')
-                .orderBy('updatedAt', 'desc')
                 .onSnapshot(async snapshot => {
                     if (snapshot.empty) {
                         chatUsersList.innerHTML = `<p style="padding:1rem; color:var(--text-muted); font-size:0.8rem; text-align:center;">Nenhuma conversa iniciada.</p>`;
                         return;
                     }
 
-                    const chatItemsPromises = snapshot.docs.map(async doc => {
-                        const c = doc.data();
-                        const isActive = doc.id === activeChatUserId ? 'active' : '';
+                    const chatsData = [];
+                    snapshot.docs.forEach(doc => {
+                        chatsData.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    chatsData.sort((a, b) => parseFirebaseDate(b.updatedAt) - parseFirebaseDate(a.updatedAt));
+
+                    const chatItemsPromises = chatsData.map(async c => {
+                        const isActive = c.id === activeChatUserId ? 'active' : '';
                         let userEmail = c.userEmail || c.email || '';
 
                         if (!userEmail) {
                             try {
-                                const uDoc = await db.collection('users').doc(doc.id).get();
-                                if (uDoc.exists && uDoc.data().email) {
-                                    userEmail = uDoc.data().email;
+                                const uDoc = await db.collection('users').doc(c.id).get();
+                                if (uDoc.exists) {
+                                    const uData = uDoc.data();
+                                    userEmail = uData.email || uData.userEmail || '';
                                 }
                             } catch(e) {}
                         }
@@ -1826,7 +1966,7 @@
                         const safeUserEmail = escapeJsArg(userEmail);
 
                         return `
-                            <div class="chat-user-item ${isActive}" onclick="selectChatUser('${doc.id}', '${safeUserName}', '${safeUserEmail}')">
+                            <div class="chat-user-item ${isActive}" onclick="selectChatUser('${c.id}', '${safeUserName}', '${safeUserEmail}')">
                                 <div class="avatar-box" style="width:36px; height:36px; font-size:0.9rem;"><i class="fa-solid fa-user"></i></div>
                                 <div style="overflow:hidden; width:100%;">
                                     <strong style="font-size:0.88rem; display:block; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;">${escapeHtml(userName)}</strong>
@@ -1849,7 +1989,8 @@
                 try {
                     const uDoc = await db.collection('users').doc(userId).get();
                     if (uDoc.exists) {
-                        userEmail = uDoc.data().email || '';
+                        const uData = uDoc.data();
+                        userEmail = uData.email || uData.userEmail || '';
                     }
                 } catch (err) {
                     console.log("Erro ao recuperar e-mail:", err);
@@ -1857,7 +1998,7 @@
             }
 
             const emailDisplay = userEmail 
-                ? `<a href="mailto:${escapeHtml(userEmail)}" style="font-size:0.82rem; font-weight:normal; color:var(--primary); text-decoration:none;" title="Enviar e-mail para este cliente"><i class="fa-regular fa-envelope"></i> ${escapeHtml(userEmail)}</a>`
+                ? `<a href="mailto:${escapeHtml(userEmail)}?subject=Suporte%20Loneke%20no%20Beat" style="font-size:0.82rem; font-weight:normal; color:var(--primary); text-decoration:none;" title="Enviar e-mail para este cliente"><i class="fa-regular fa-envelope"></i> ${escapeHtml(userEmail)}</a>`
                 : `<span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">E-mail não cadastrado</span>`;
 
             document.getElementById('chat-header').innerHTML = `
@@ -1927,145 +2068,226 @@
         }
 
         // ==========================================
-        // 13. BASE DE USUÁRIOS (CADASTRO + CHECKOUT)
+        // 13. BASE DE USUÁRIOS COMPLETA (TABELA "users")
         // ==========================================
-        function loadUsers() {
+        async function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             if (unsubscribeUsers) unsubscribeUsers();
-            if (unsubscribeTransactionsUsers) unsubscribeTransactionsUsers();
 
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando todos os usuários...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando usuários do banco de dados...</td></tr>`;
 
-            let registeredUsersMap = new Map();
-            let checkoutUsersMap = new Map();
+            try {
+                const [usersSnap, accessSnap, txSnap, prodSnap] = await Promise.all([
+                    db.collection('users').get(),
+                    db.collection('user_access').get(),
+                    db.collection('transactions').get(),
+                    db.collection('produtos').get()
+                ]);
 
-            function renderCombinedUsers() {
-                // Junta ambas as fontes dando preferência aos dados de cadastro completo
-                const combinedMap = new Map();
-
-                // 1. Adiciona usuários vindos do checkout
-                checkoutUsersMap.forEach((u, emailKey) => {
-                    combinedMap.set(emailKey, u);
+                // Mapa de produtos para rápida consulta de títulos por ID
+                const productTitlesMap = {};
+                prodSnap.forEach(pDoc => {
+                    const pData = pDoc.data();
+                    productTitlesMap[pDoc.id] = pData.titulo || pData.title || pDoc.id;
+                    if (pData.uuid) productTitlesMap[pData.uuid] = pData.titulo || pData.title;
                 });
 
-                // 2. Sobrescreve/adiciona com dados completos da tela de cadastro
-                registeredUsersMap.forEach((u, emailKey) => {
-                    combinedMap.set(emailKey, u);
+                const usersMap = new Map();
+
+                // 1. Processar Coleção 'users'
+                usersSnap.forEach(doc => {
+                    const data = doc.data();
+                    const email = (data.email || data.userEmail || '').trim().toLowerCase();
+                    const key = email || doc.id;
+
+                    // Extrair produtos ativados da estrutura: produtos.productId = true
+                    const userProducts = [];
+                    if (data.produtos && typeof data.produtos === 'object') {
+                        Object.keys(data.produtos).forEach(pId => {
+                            if (data.produtos[pId] === true) {
+                                const title = productTitlesMap[pId] || pId;
+                                userProducts.push({ id: pId, title: title });
+                            }
+                        });
+                    }
+
+                    usersMap.set(key, {
+                        uid: doc.id,
+                        name: data.name || data.nome || data.displayName || 'Usuário Cadastrado',
+                        email: data.email || data.userEmail || email || 'Sem E-mail',
+                        whatsapp: data.whatsapp || data.telefone || data.phone || 'N/A',
+                        country: data.country || data.pais || 'Angola',
+                        role: data.role || 'client',
+                        createdAt: data.createdAt ? parseFirebaseDate(data.createdAt) : null,
+                        products: userProducts,
+                        source: 'users'
+                    });
+                });
+
+                // 2. Processar Coleção 'user_access' para unificar produtos e usuários extras
+                accessSnap.forEach(doc => {
+                    const data = doc.data();
+                    const email = (data.userEmail || data.email || '').trim().toLowerCase();
+                    const key = email || data.userId || doc.id;
+
+                    if (usersMap.has(key)) {
+                        const existing = usersMap.get(key);
+                        if (data.status === 'unlocked' && data.productId) {
+                            const alreadyHas = existing.products.some(p => p.id === data.productId);
+                            if (!alreadyHas) {
+                                const title = data.productTitle || productTitlesMap[data.productId] || data.productId;
+                                existing.products.push({ id: data.productId, title: title });
+                            }
+                        }
+                        if ((!existing.whatsapp || existing.whatsapp === 'N/A') && data.whatsapp) {
+                            existing.whatsapp = data.whatsapp;
+                        }
+                    } else if (email || data.userId) {
+                        const userProducts = [];
+                        if (data.status === 'unlocked' && data.productId) {
+                            userProducts.push({
+                                id: data.productId,
+                                title: data.productTitle || productTitlesMap[data.productId] || data.productId
+                            });
+                        }
+                        usersMap.set(key, {
+                            uid: data.userId || doc.id,
+                            name: data.userName || 'Cliente (Acesso)',
+                            email: email || 'Sem E-mail',
+                            whatsapp: data.whatsapp || 'N/A',
+                            country: 'Angola',
+                            role: 'client',
+                            createdAt: data.requestedAt ? parseFirebaseDate(data.requestedAt) : null,
+                            products: userProducts,
+                            source: 'user_access'
+                        });
+                    }
+                });
+
+                // 3. Processar Coleção 'transactions'
+                txSnap.forEach(doc => {
+                    const data = doc.data();
+                    const email = (data.userEmail || data.email || '').trim().toLowerCase();
+                    const key = email || doc.id;
+
+                    if (usersMap.has(key)) {
+                        const existing = usersMap.get(key);
+                        if ((!existing.whatsapp || existing.whatsapp === 'N/A') && data.whatsapp) {
+                            existing.whatsapp = data.whatsapp;
+                        }
+                    } else if (email && email !== 'n/a') {
+                        usersMap.set(key, {
+                            uid: data.userId || doc.id,
+                            name: data.userName || 'Cliente Checkout',
+                            email: email,
+                            whatsapp: data.whatsapp || 'N/A',
+                            country: 'Angola',
+                            role: 'client',
+                            createdAt: data.createdAt ? parseFirebaseDate(data.createdAt) : null,
+                            products: [],
+                            source: 'checkout'
+                        });
+                    }
                 });
 
                 tbody.innerHTML = '';
 
-                if (combinedMap.size === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum usuário cadastrado ou registrado via checkout.</td></tr>`;
+                if (usersMap.size === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum usuário cadastrado encontrado.</td></tr>`;
                     return;
                 }
 
-                combinedMap.forEach((u) => {
+                usersMap.forEach((u) => {
                     const cleanWhatsapp = u.whatsapp ? String(u.whatsapp).replace(/\D/g, '') : '';
-                    const safeName = escapeJsArg(u.name || 'Utilizador');
-                    const safeEmail = escapeJsArg(u.email || '');
-                    const sourceBadge = u.source === 'cadastro' 
-                        ? `<span class="cat-badge" style="background:rgba(16,185,129,0.15); color:var(--success);"><i class="fa-solid fa-user-plus"></i> Tela Cadastro</span>` 
-                        : `<span class="cat-badge" style="background:rgba(59,130,246,0.15); color:var(--info);"><i class="fa-solid fa-cart-shopping"></i> Checkout</span>`;
+                    const safeName = escapeJsArg(u.name);
+                    const safeEmail = escapeJsArg(u.email);
+                    const safeUid = escapeJsArg(u.uid);
+
+                    const roleBadge = u.role === 'admin' 
+                        ? `<span style="background:rgba(229,9,20,0.2); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:800; margin-left:6px;">ADMIN</span>`
+                        : `<span style="background:rgba(255,255,255,0.08); color:var(--text-muted); padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700; margin-left:6px;">CLIENTE</span>`;
+
+                    let productsBadgeHtml = '';
+                    if (u.products.length > 0) {
+                        productsBadgeHtml = `<span class="cat-badge" style="background:rgba(16,185,129,0.15); color:var(--success); cursor:pointer;" title="${escapeHtml(u.products.map(p => p.title).join(', '))}">
+                            <i class="fa-solid fa-box-open"></i> ${u.products.length} Produto(s)
+                        </span>`;
+                    } else {
+                        productsBadgeHtml = `<span style="color:var(--text-muted); font-size:0.8rem;">Nenhum</span>`;
+                    }
+
+                    const dateStr = u.createdAt ? u.createdAt.toLocaleDateString('pt-AO') : 'N/A';
 
                     tbody.innerHTML += `
                         <tr>
-                            <td style="font-weight:600;">${escapeHtml(u.name || 'Cliente')}</td>
-                            <td style="color:var(--text-muted);">${escapeHtml(u.email || 'N/A')}</td>
                             <td>
-                                ${u.whatsapp ? `
-                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                <div style="display:flex; align-items:center;">
+                                    <strong>${escapeHtml(u.name)}</strong> ${roleBadge}
+                                </div>
+                                <span style="font-size:0.75rem; color:var(--text-muted);">UID: ${escapeHtml(u.uid)}</span>
+                            </td>
+                            <td>
+                                <a href="mailto:${escapeHtml(u.email)}" style="color:var(--primary); font-weight:600; text-decoration:none;">
+                                    <i class="fa-regular fa-envelope"></i> ${escapeHtml(u.email)}
+                                </a>
+                            </td>
+                            <td>
+                                ${cleanWhatsapp ? `
+                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:600;">
                                         <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(u.whatsapp)}
                                     </a>
-                                ` : '<span style="color:var(--text-muted);">Não informado</span>'}
+                                ` : '<span style="color:var(--text-muted);">N/A</span>'}
                             </td>
-                            <td>${escapeHtml(u.country || 'Angola')}</td>
-                            <td>${sourceBadge}</td>
+                            <td><i class="fa-solid fa-location-dot" style="color:var(--info);"></i> ${escapeHtml(u.country)}</td>
+                            <td>${productsBadgeHtml}</td>
+                            <td style="font-size:0.8rem; color:var(--text-muted);">${dateStr}</td>
                             <td style="text-align:right;">
-                                <button class="btn-action btn-primary" style="padding:6px 12px; font-size:0.78rem;" 
-                                    onclick="openChatWithUser('${u.id}', '${safeName}', '${safeEmail}')">
-                                    <i class="fa-solid fa-comments"></i> Chat
-                                </button>
+                                <div style="display:inline-flex; gap:6px;">
+                                    <button class="btn-action btn-success btn-icon-only" onclick="openGrantModalForUser('${safeEmail}')" title="Gerenciar Acessos por E-mail"><i class="fa-solid fa-key"></i></button>
+                                    <button class="btn-action btn-danger btn-icon-only" onclick="deleteUser('${safeUid}')" title="Excluir Usuário"><i class="fa-solid fa-trash"></i></button>
+                                </div>
                             </td>
                         </tr>
                     `;
                 });
+
+            } catch (err) {
+                console.error("Erro ao carregar base de usuários:", err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar usuários. Verifique as permissões no Firestore.</td></tr>`;
             }
-
-            // Ouvinte 1: Coleção de Usuários Registrados
-            unsubscribeUsers = db.collection('users')
-                .onSnapshot(snapshot => {
-                    registeredUsersMap.clear();
-                    snapshot.forEach(doc => {
-                        const u = doc.data();
-                        const email = (u.email || '').trim().toLowerCase();
-                        if (email) {
-                            registeredUsersMap.set(email, {
-                                id: doc.id,
-                                name: u.name || 'Sem Nome',
-                                email: u.email,
-                                whatsapp: u.whatsapp || '',
-                                country: u.country || 'Angola',
-                                source: 'cadastro'
-                            });
-                        }
-                    });
-                    renderCombinedUsers();
-                }, err => {
-                    console.error("Erro ao carregar usuários da coleção 'users':", err);
-                });
-
-            // Ouvinte 2: Coleção de Transações (Checkout)
-            unsubscribeTransactionsUsers = db.collection('transactions')
-                .onSnapshot(snapshot => {
-                    checkoutUsersMap.clear();
-                    snapshot.forEach(doc => {
-                        const t = doc.data();
-                        const email = (t.userEmail || t.email || '').trim().toLowerCase();
-                        if (email && email !== 'n/a') {
-                            if (!checkoutUsersMap.has(email)) {
-                                checkoutUsersMap.set(email, {
-                                    id: doc.id,
-                                    name: t.userName || t.nome || 'Cliente Checkout',
-                                    email: email,
-                                    whatsapp: t.whatsapp || t.phone || '',
-                                    country: t.country || 'Angola',
-                                    source: 'checkout'
-                                });
-                            }
-                        }
-                    });
-                    renderCombinedUsers();
-                }, err => {
-                    console.error("Erro ao carregar compras da coleção 'transactions':", err);
-                });
         }
 
-        async function openChatWithUser(userId, userName, userEmail) {
-            try {
-                const chatRef = db.collection('chats').doc(userId);
-                const chatDoc = await chatRef.get();
-
-                if (!chatDoc.exists) {
-                    await chatRef.set({
-                        userName: userName,
-                        userEmail: userEmail,
-                        lastMessage: 'Atendimento iniciado pelo suporte',
-                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } else {
-                    await chatRef.set({
-                        userName: userName,
-                        userEmail: userEmail
-                    }, { merge: true });
+        function openGrantModalForUser(email) {
+            switchView('access');
+            openGrantAccessModal().then(() => {
+                if (email) {
+                    document.getElementById('grant-email').value = email;
+                    onGrantEmailChange();
                 }
+            });
+        }
 
-                const chatMenuItem = document.querySelectorAll('.menu-item')[4];
-                switchView('chat', chatMenuItem);
-                selectChatUser(userId, userName, userEmail);
-            } catch (error) {
-                showToast('Erro ao abrir chat: ' + error.message, 'warning');
-            }
+        function deleteUser(uid) {
+            Swal.fire({
+                title: 'Excluir Usuário?',
+                text: 'Esta ação irá remover permanentemente o registro deste usuário na coleção "users".',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E50914',
+                cancelButtonColor: '#1F1F2C',
+                confirmButtonText: 'Sim, Excluir',
+                cancelButtonText: 'Cancelar',
+                customClass: { popup: 'swal2-popup-dark', title: 'swal2-title-dark' }
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    db.collection('users').doc(uid).delete().then(() => {
+                        showToast('Usuário removido da base com sucesso.', 'info');
+                        loadUsers();
+                    }).catch(err => {
+                        showToast('Erro ao excluir usuário: ' + err.message, 'warning');
+                    });
+                }
+            });
         }
     </script>
 </body>
