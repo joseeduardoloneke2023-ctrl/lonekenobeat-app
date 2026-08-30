@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Administrativo VIP | Loneke no Beat</title>
     
+    <!-- Fontes Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Font Awesome Icons 6.5.1 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
+    <!-- SweetAlert2 CSS e JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Firebase SDK Compat v10.8.0 -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -29,18 +33,19 @@
             --info: #3B82F6;
             
             --bg-body: #050508;
-            --bg-header: rgba(10, 10, 15, 0.85);
-            --bg-card: rgba(18, 18, 26, 0.75);
-            --bg-card-hover: rgba(28, 28, 40, 0.90);
+            --bg-sidebar: rgba(10, 10, 15, 0.95);
+            --bg-card: rgba(18, 18, 26, 0.70);
+            --bg-card-hover: rgba(28, 28, 40, 0.85);
             --border-color: rgba(255, 255, 255, 0.08);
             --border-color-glow: rgba(229, 9, 20, 0.4);
             
             --text-main: #FFFFFF;
             --text-muted: #9CA3AF;
+            --sidebar-width: 270px;
             --radius-lg: 20px;
             --radius-md: 14px;
             --radius-sm: 8px;
-            --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            --transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         * {
@@ -66,11 +71,10 @@
         body::before {
             content: '';
             position: fixed;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 1000px;
-            height: 500px;
+            top: -250px;
+            left: -200px;
+            width: 700px;
+            height: 700px;
             background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0,0,0,0) 70%);
             z-index: 0;
             pointer-events: none;
@@ -78,8 +82,8 @@
         }
 
         @keyframes pulseGlow {
-            0% { transform: translateX(-50%) scale(1); opacity: 0.4; }
-            100% { transform: translateX(-50%) scale(1.2); opacity: 0.7; }
+            0% { transform: scale(1) translate(0, 0); opacity: 0.5; }
+            100% { transform: scale(1.2) translate(80px, 50px); opacity: 0.8; }
         }
 
         /* PRELOADER */
@@ -174,101 +178,28 @@
         .toast-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }
         .toast-msg { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
 
-        /* HEADER & TOP MENU */
-        .top-nav-header {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background: var(--bg-header);
-            backdrop-filter: blur(25px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.8rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        /* LAYOUT & HEADER */
+        .app-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        #sidebar {
+            width: var(--sidebar-width); background: var(--bg-sidebar);
+            position: fixed; top: 0; left: 0; height: 100vh; z-index: 9999;
+            padding: 24px 16px; transition: var(--transition);
+            border-right: 1px solid var(--border-color);
+            display: flex; flex-direction: column; backdrop-filter: blur(25px);
+            overflow-y: auto;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
         }
 
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 1.2rem;
-            flex-shrink: 0;
+        .top-navbar {
+            position: fixed; top: 0; right: 0; left: var(--sidebar-width); height: 70px;
+            background: rgba(7, 7, 10, 0.75); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color); z-index: 90;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2.5rem; transition: var(--transition);
         }
 
-        .brand-logo {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 900;
-            font-size: 1.25rem;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .brand-logo i { color: var(--primary); font-size: 1.4rem; filter: drop-shadow(0 0 10px var(--primary-glow)); }
-        .brand-logo .accent { color: var(--primary); }
-
-        .user-status-pill {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border-color);
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-
-        /* HORIZONTAL MENU NAVIGATION */
-        .horizontal-menu {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            padding: 4px 0;
-        }
-        .horizontal-menu::-webkit-scrollbar { display: none; }
-
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 18px;
-            border-radius: 12px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            font-weight: 600;
-            background: transparent;
-            border: 1px solid transparent;
-            cursor: pointer;
-            transition: var(--transition);
-            white-space: nowrap;
-        }
-        .nav-link i { font-size: 1rem; }
-        .nav-link:hover {
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-        .nav-link.active {
-            color: #FFFFFF;
-            background: linear-gradient(135deg, rgba(229, 9, 20, 0.25) 0%, rgba(229, 9, 20, 0.1) 100%);
-            border-color: rgba(229, 9, 20, 0.4);
-            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.2);
-            font-weight: 700;
-        }
-        .nav-link.active i { color: var(--primary); }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
+        .nav-actions { display: flex; align-items: center; gap: 1.2rem; margin-left: auto; }
 
         .icon-btn {
             width: 42px; height: 42px; border-radius: 50%;
@@ -278,57 +209,51 @@
         }
         .icon-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.2); }
 
-        .mobile-toggle { display: none; }
-
-        /* MAIN CONTENT AREA */
         .main-content {
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 2.5rem 2rem;
-            min-height: calc(100vh - 80px);
-            position: relative;
-            z-index: 1;
+            flex: 1; margin-left: var(--sidebar-width); margin-top: 70px;
+            padding: 2.5rem; min-height: calc(100vh - 70px); transition: var(--transition);
         }
 
-        .panel-view { display: none; opacity: 0; transform: translateY(15px); }
-        .panel-view.active { display: block; animation: viewEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .logo-area {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 2rem; padding: 12px;
+            background: rgba(229, 9, 20, 0.1); border: 1px solid rgba(229, 9, 20, 0.3);
+            border-radius: var(--radius-md);
+        }
+
+        .avatar-box {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #800000);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #fff; box-shadow: 0 0 15px var(--primary-glow); flex-shrink: 0;
+        }
+
+        .menu-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); font-weight: 700; margin: 1.2rem 0 0.6rem 10px;
+        }
+
+        .menu-item {
+            display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+            color: var(--text-muted); font-size: 0.88rem; font-weight: 500;
+            border-radius: var(--radius-md); cursor: pointer; transition: var(--transition);
+            margin-bottom: 0.3rem; text-decoration: none;
+        }
+        .menu-item i { font-size: 1.1rem; width: 22px; text-align: center; }
+        .menu-item:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.05); transform: translateX(4px); }
+        .menu-item.active {
+            color: var(--text-main);
+            background: linear-gradient(90deg, rgba(229, 9, 20, 0.25) 0%, rgba(229, 9, 20, 0.02) 100%);
+            border-left: 3px solid var(--primary); font-weight: 600;
+        }
+        .menu-item.active i { color: var(--primary); filter: drop-shadow(0 0 8px var(--primary-glow)); }
+
+        .panel-view { display: none; opacity: 0; transform: translateY(20px); }
+        .panel-view.active { display: block; animation: viewEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes viewEntrance { to { opacity: 1; transform: translateY(0); } }
-
-        .view-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 1.2rem;
-        }
 
         .view-title {
             font-family: 'Montserrat', sans-serif; font-size: 1.8rem; font-weight: 800;
-            letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px;
-        }
-
-        /* TOOLBAR & SEARCH BAR */
-        .toolbar-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 1.2rem 1.5rem;
-            margin-bottom: 1.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-            backdrop-filter: blur(12px);
-        }
-
-        .search-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex: 1;
-            min-width: 280px;
+            margin-bottom: 0.4rem; letter-spacing: -0.5px; display: flex; align-items: center; gap: 12px;
         }
 
         .form-label {
@@ -344,66 +269,25 @@
         .search-input:focus { border-color: var(--primary); background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 20px var(--primary-glow); }
         select.search-input option { background: #0D0D12; color: #FFF; padding: 10px; }
 
-        /* KPI STATS */
-        .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+        .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
         .stat-card {
             background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
             padding: 1.5rem; display: flex; align-items: center; gap: 20px; transition: var(--transition); backdrop-filter: blur(12px);
         }
         .stat-card:hover { transform: translateY(-6px); border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
-        .stat-icon { width: 58px; height: 58px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; }
+        .stat-icon { width: 55px; height: 55px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
         .stat-info h3 { font-size: 1.8rem; font-family: 'Montserrat', sans-serif; font-weight: 800; line-height: 1.2; }
-        .stat-info p { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-top: 4px; }
+        .stat-info p { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
 
-        /* DATA TABLES */
         .table-container {
             background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
             overflow-x: auto; backdrop-filter: blur(12px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);
         }
         .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .admin-table th { background: rgba(255, 255, 255, 0.03); padding: 18px 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        .admin-table th { background: rgba(255, 255, 255, 0.03); padding: 16px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-color); white-space: nowrap; }
         .admin-table td { padding: 16px; font-size: 0.88rem; border-bottom: 1px solid rgba(255, 255, 255, 0.03); vertical-align: middle; }
         .admin-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
-        /* PAGINATION STYLES */
-        .pagination-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1.2rem 1.5rem;
-            background: rgba(0, 0, 0, 0.2);
-            border-top: 1px solid var(--border-color);
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .pagination-btn {
-            padding: 8px 14px;
-            border-radius: var(--radius-md);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .pagination-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
-        }
-        .pagination-btn.active {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #FFF;
-            box-shadow: 0 0 12px var(--primary-glow);
-        }
-
-        /* BUTTONS */
         .btn-action {
             padding: 10px 18px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.82rem;
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -421,12 +305,14 @@
         .btn-warning:hover { background: var(--warning); color: #000; }
         .btn-icon-only { width: 36px; height: 36px; padding: 0; border-radius: var(--radius-sm); }
 
+        /* BADGES CATEGORIA E ESTADOS */
         .cat-badge {
             display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
             border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
             background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: #FFF;
         }
 
+        /* PREÇOS */
         .price-box { display: flex; flex-direction: column; gap: 2px; }
         .price-old { font-size: 0.75rem; color: #FF6B6B; text-decoration: line-through; opacity: 0.8; font-weight: 600; }
         .price-new { font-size: 0.92rem; color: var(--success); font-weight: 800; }
@@ -448,6 +334,7 @@
         }
         .swal2-title-dark { font-family: 'Montserrat', sans-serif !important; font-weight: 800 !important; }
 
+        /* LISTA DE CHECKBOX PRODUTOS */
         .product-checkbox-item {
             display: flex; align-items: center; gap: 12px; padding: 10px 14px;
             background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color);
@@ -457,27 +344,18 @@
         .product-checkbox-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
 
         @media (max-width: 1024px) {
-            .top-nav-header { padding: 0.8rem 1rem; }
-            .mobile-toggle { display: flex !important; }
-            .horizontal-menu {
-                position: fixed;
-                top: 70px; left: 0; width: 100%;
-                background: #0A0A0F;
-                border-bottom: 1px solid var(--border-color);
-                flex-direction: column;
-                align-items: stretch;
-                padding: 1rem;
-                display: none;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-            }
-            .horizontal-menu.open { display: flex; }
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            .top-navbar { left: 0; }
+            .main-content { margin-left: 0; padding: 1.5rem; }
+            #menuToggle { display: flex !important; }
             .chat-layout { grid-template-columns: 1fr; height: auto; }
-            .logout-text { display: none; }
         }
     </style>
 </head>
 <body>
 
+    <!-- PRELOADER -->
     <div id="preloader">
         <div class="loader-logo">
             <i class="fa-solid fa-shield-halved fa-spin"></i> LONEKE <span style="color:var(--primary);">ADMIN</span>
@@ -487,290 +365,281 @@
         </div>
     </div>
 
+    <!-- TOAST CONTAINER -->
     <div id="toast-container"></div>
 
-    <header class="top-nav-header">
-        <div class="nav-brand">
-            <div class="brand-logo">
-                <i class="fa-solid fa-shield-halved"></i>
-                <span>LONEKE <span class="accent">ADMIN VIP</span></span>
-            </div>
-            <div class="user-status-pill">
-                <i class="fa-solid fa-circle" style="color:var(--success); font-size:0.5rem;"></i>
-                <span id="adminEmailDisplay">ADMINISTRADOR</span>
-            </div>
-        </div>
+    <div class="app-container">
 
-        <nav class="horizontal-menu" id="horizontalMenu">
-            <button class="nav-link active" onclick="switchView('dashboard', this)">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Dashboard</span>
-            </button>
-            <button class="nav-link" onclick="switchView('pending-sales', this)">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-                <span>Vendas Pendentes</span>
-            </button>
-            <button class="nav-link" onclick="switchView('products', this)">
-                <i class="fa-solid fa-box-archive"></i>
-                <span>Produtos & Beats</span>
-            </button>
-            <button class="nav-link" onclick="switchView('access', this)">
-                <i class="fa-solid fa-key"></i>
-                <span>Permissões</span>
-            </button>
-            <button class="nav-link" onclick="switchView('chat', this)">
-                <i class="fa-solid fa-comments"></i>
-                <span>Suporte Chat</span>
-            </button>
-            <button class="nav-link" onclick="switchView('users', this)">
-                <i class="fa-solid fa-users"></i>
-                <span>Usuários</span>
-            </button>
-        </nav>
-
-        <div class="nav-actions">
-            <button class="icon-btn" title="Status Conexão Firebase" onclick="showToast('Banco Firebase Conectado em Tempo Real.', 'success', 'Conexão OK')">
-                <i class="fa-solid fa-server" style="color:var(--success);"></i>
-            </button>
-            <button class="btn-action btn-danger btn-logout" onclick="logoutAdmin()">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span class="logout-text">Sair</span>
-            </button>
-            <button class="icon-btn mobile-toggle" id="menuToggle" onclick="toggleMobileMenu()">
+        <!-- TOP NAVBAR -->
+        <header class="top-navbar">
+            <button class="icon-btn" id="menuToggle" style="display:none;" onclick="toggleSidebar()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-        </div>
-    </header>
-
-    <main class="main-content">
-
-        <section id="view-dashboard" class="panel-view active">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title"><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> Dashboard de Faturamento</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">Acompanhe o desempenho das suas vendas e métricas em tempo real.</p>
-                </div>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-bottom: 2rem; flex-wrap:wrap;">
-                <button class="btn-action btn-primary" onclick="filterBilling('day', this)">Diário</button>
-                <button class="btn-action btn-secondary" onclick="filterBilling('week', this)">Semanal</button>
-                <button class="btn-action btn-secondary" onclick="filterBilling('month', this)">Mensal</button>
-                <button class="btn-action btn-secondary" onclick="filterBilling('semester', this)">Semestral</button>
-                <button class="btn-action btn-secondary" onclick="filterBilling('year', this)">Anual</button>
-            </div>
-
-            <div class="quick-stats">
-                <div class="stat-card">
-                    <div class="stat-icon" style="color:var(--primary); background:rgba(229,9,20,0.1);"><i class="fa-solid fa-wallet"></i></div>
-                    <div class="stat-info">
-                        <h3 id="kpi-revenue">0 Kz</h3>
-                        <p>Faturamento no Período</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color:var(--success); background:rgba(16,185,129,0.1);"><i class="fa-solid fa-cart-shopping"></i></div>
-                    <div class="stat-info">
-                        <h3 id="kpi-sales">0</h3>
-                        <p>Vendas Concluídas</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon" style="color:#FFAA00; background:rgba(255,170,0,0.1);"><i class="fa-solid fa-users"></i></div>
-                    <div class="stat-info">
-                        <h3 id="kpi-users">0</h3>
-                        <p>Total de Usuários</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="view-pending-sales" class="panel-view">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> Vendas Pendentes (Checkout)</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">Visualize as compras pendentes e autorize/libere o produto para cada e-mail.</p>
-                </div>
-                <button class="btn-action btn-secondary" onclick="loadPendingSales()">
-                    <i class="fa-solid fa-arrows-rotate"></i> Atualizar Lista
+            <div class="nav-actions">
+                <button class="icon-btn" onclick="showToast('Banco Firebase Conectado em Tempo Real.', 'success', 'Conexão OK')">
+                    <i class="fa-solid fa-server" style="color:var(--success);"></i>
                 </button>
             </div>
+        </header>
 
-            <div class="table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Data / Hora</th>
-                            <th>E-mail do Cliente</th>
-                            <th>Produto Solicitado</th>
-                            <th>Valor (Kz)</th>
-                            <th>Comprovativo / Ref.</th>
-                            <th>Estado</th>
-                            <th style="text-align:right;">Autorização / Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pending-sales-table-body">
-                        </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="view-products" class="panel-view">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title"><i class="fa-solid fa-box-archive" style="color:var(--primary);"></i> Catálogo de Produtos e Beats</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">Gerencie o catálogo VIP, preços, detalhes e links de checkout.</p>
-                </div>
-                <button class="btn-action btn-primary" onclick="openProductModal()"><i class="fa-solid fa-plus-circle"></i> Cadastrar Novo Produto</button>
-            </div>
-
-            <div class="toolbar-box">
-                <div class="search-group">
-                    <i class="fa-solid fa-magnifying-glass" style="color:var(--text-muted); font-size:1.1rem;"></i>
-                    <input type="text" id="product-search-input" class="search-input" placeholder="Buscar por título, slug ou palavra-chave..." oninput="applyProductFilters()">
-                </div>
-                <div style="display:flex; gap:10px; min-width:200px;">
-                    <select id="product-category-filter" class="search-input" onchange="applyProductFilters()">
-                        <option value="all">Todas as Categorias</option>
-                        <option value="beats">Beats</option>
-                        <option value="cursos">Cursos & Aulas</option>
-                        <option value="drumkits">Drumkits</option>
-                        <option value="flp">FLP Projects</option>
-                        <option value="samplepacks">Sample Packs</option>
-                        <option value="soundkits">Soundkits</option>
-                        <option value="tutorials">Tutoriais</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th style="width:60px;">Capa</th>
-                            <th>Título / Slug</th>
-                            <th>Categoria</th>
-                            <th>Preços (Antigo / Atual)</th>
-                            <th>Vendas</th>
-                            <th>Destaque</th>
-                            <th style="text-align:right;">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="products-table-body">
-                        </tbody>
-                </table>
-
-                <div class="pagination-bar" id="products-pagination">
+        <!-- SIDEBAR -->
+        <aside id="sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="logo-area" style="flex: 1; margin-bottom: 0;">
+                    <div class="avatar-box"><i class="fa-solid fa-user-shield"></i></div>
+                    <div style="display:flex; flex-direction:column; overflow:hidden;">
+                        <span style="font-weight:700; font-size:0.95rem;">Painel Admin</span>
+                        <span style="color:var(--primary); font-size:0.75rem; font-weight:700;" id="adminEmailDisplay">ADMINISTRADOR</span>
                     </div>
-            </div>
-        </section>
-
-        <section id="view-access" class="panel-view">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Liberação de Acesso por Perfil</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">Escolha um e-mail cadastrado e selecione quais produtos aquele perfil poderá acessar.</p>
                 </div>
-                <button class="btn-action btn-success" onclick="openGrantAccessModal()">
-                    <i class="fa-solid fa-user-check"></i> Liberar Acesso por E-mail
+                <button class="icon-btn" onclick="toggleSidebar(false)" style="margin-left: 8px; flex-shrink: 0; border: none; background: transparent;">
+                    <i class="fa-solid fa-xmark" style="font-size: 1.2rem;"></i>
                 </button>
             </div>
+            
+            <div class="menu-label">Gestão Global</div>
+            <div class="menu-item active" onclick="switchView('dashboard', this)">
+                <i class="fa-solid fa-chart-pie"></i> Dashboard & KPIs
+            </div>
+            <div class="menu-item" onclick="switchView('pending-sales', this)">
+                <i class="fa-solid fa-clock-rotate-left"></i> Vendas Pendentes (Checkout)
+            </div>
+            <div class="menu-item" onclick="switchView('products', this)">
+                <i class="fa-solid fa-box-archive"></i> Produtos & Beats
+            </div>
+            <div class="menu-item" onclick="switchView('access', this)">
+                <i class="fa-solid fa-key"></i> Acessos & Permissões por E-mail
+            </div>
+            <div class="menu-item" onclick="switchView('chat', this)">
+                <i class="fa-solid fa-comments"></i> Suporte Chat
+            </div>
+            <div class="menu-item" onclick="switchView('users', this)">
+                <i class="fa-solid fa-users"></i> Base de Usuários
+            </div>
 
-            <div class="table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Cliente / E-mail</th>
-                            <th>Produto Liberado</th>
-                            <th>WhatsApp</th>
-                            <th>Estado do Acesso</th>
-                            <th style="text-align:right;">Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="access-table-body">
+            <div class="menu-item" onclick="logoutAdmin()" style="margin-top:auto; color:#FF4D4D; border-top:1px solid var(--border-color); padding-top:1.2rem;">
+                <i class="fa-solid fa-right-from-bracket"></i> Terminar Sessão
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- 1. DASHBOARD VIEW -->
+            <section id="view-dashboard" class="panel-view active">
+                <h2 class="view-title"><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> Dashboard de Faturamento</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 2rem;">Acompanhe o desempenho das suas vendas e métricas em tempo real.</p>
+
+                <!-- Filtros de Faturamento -->
+                <div style="display:flex; gap:10px; margin-bottom: 2rem; flex-wrap:wrap;">
+                    <button class="btn-action btn-primary" onclick="filterBilling('day', this)">Diário</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('week', this)">Semanal</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('month', this)">Mensal</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('semester', this)">Semestral</button>
+                    <button class="btn-action btn-secondary" onclick="filterBilling('year', this)">Anual</button>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:var(--primary); background:rgba(229,9,20,0.1);"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-revenue">0 Kz</h3>
+                            <p>Faturamento no Período</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:var(--success); background:rgba(16,185,129,0.1);"><i class="fa-solid fa-cart-shopping"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-sales">0</h3>
+                            <p>Vendas Concluídas</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="color:#FFAA00; background:rgba(255,170,0,0.1);"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-info">
+                            <h3 id="kpi-users">0</h3>
+                            <p>Total de Usuários</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. VIEW DE VENDAS E PRODUTOS PENDENTES DO CHECKOUT -->
+            <section id="view-pending-sales" class="panel-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--warning);"></i> Vendas Pendentes (Checkout)</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Visualize as compras pendentes e autorize/libere o produto para cada e-mail.</p>
+                    </div>
+                    <button class="btn-action btn-secondary" onclick="loadPendingSales()">
+                        <i class="fa-solid fa-arrows-rotate"></i> Atualizar Lista
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Data / Hora</th>
+                                <th>E-mail do Cliente</th>
+                                <th>Produto Solicitado</th>
+                                <th>Valor (Kz)</th>
+                                <th>Comprovativo / Ref.</th>
+                                <th>Estado</th>
+                                <th style="text-align:right;">Autorização / Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pending-sales-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
                         </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="view-chat" class="panel-view">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title"><i class="fa-solid fa-comments" style="color:var(--primary);"></i> Central de Suporte Chat</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">Atenda os alunos e visualize seus e-mails de cadastro para suporte direto.</p>
+                    </table>
                 </div>
-            </div>
+            </section>
 
-            <div class="chat-layout">
-                <div class="chat-sidebar" id="chat-users-list">
+            <!-- 3. PRODUCTS VIEW -->
+            <section id="view-products" class="panel-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-box-archive" style="color:var(--primary);"></i> Catálogo de Produtos e Beats</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Gerencie o catálogo VIP, preços, detalhes e links de checkout.</p>
                     </div>
-                <div class="chat-main-area">
-                    <div id="chat-header" class="chat-header-bar">Selecione um aluno</div>
-                    <div id="chat-messages" class="chat-messages-box">
-                        <p style="color:var(--text-muted); text-align:center; margin-top:auto; margin-bottom:auto;">Nenhuma conversa selecionada no momento.</p>
-                    </div>
-                    <div class="chat-input-bar">
-                        <input type="text" id="chat-input" class="search-input" placeholder="Escreva uma resposta para o aluno..." onkeydown="if(event.key==='Enter') sendAdminMessage()">
-                        <button class="btn-action btn-primary" onclick="sendAdminMessage()"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
-                    </div>
+                    <button class="btn-action btn-primary" onclick="openProductModal()"><i class="fa-solid fa-plus-circle"></i> Cadastrar Novo Produto</button>
                 </div>
-            </div>
-        </section>
 
-        <section id="view-users" class="panel-view">
-            <div class="view-header">
-                <div>
-                    <h2 class="view-title"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Base de Usuários Cadastrados</h2>
-                    <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">Lista completa de contas sincronizadas do Firebase (Tabela <code>users</code>).</p>
-                </div>
-                <button class="btn-action btn-secondary" onclick="loadUsers()">
-                    <i class="fa-solid fa-arrows-rotate"></i> Atualizar Lista
-                </button>
-            </div>
-
-            <div class="table-container">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Nome / Identificador</th>
-                            <th>E-mail</th>
-                            <th>WhatsApp</th>
-                            <th>País</th>
-                            <th>Produtos Ativos</th>
-                            <th>Data de Registro</th>
-                            <th style="text-align:right;">Ações / Chat</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body">
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">Capa</th>
+                                <th>Título / Slug</th>
+                                <th>Categoria</th>
+                                <th>Preços (Antigo / Atual)</th>
+                                <th>Vendas</th>
+                                <th>Destaque</th>
+                                <th style="text-align:right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
                         </tbody>
-                </table>
-            </div>
-        </section>
+                    </table>
+                </div>
+            </section>
 
-    </main>
+            <!-- 4. ACCESS & ORDERS VIEW -->
+            <section id="view-access" class="panel-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-key" style="color:var(--primary);"></i> Liberação de Acesso por Perfil</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Escolha um e-mail cadastrado e selecione quais produtos aquele perfil poderá acessar ao entrar no site.</p>
+                    </div>
+                    <button class="btn-action btn-success" onclick="openGrantAccessModal()">
+                        <i class="fa-solid fa-user-check"></i> Liberar Acesso por E-mail
+                    </button>
+                </div>
 
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente / E-mail</th>
+                                <th>Produto Liberado</th>
+                                <th>WhatsApp</th>
+                                <th>Estado do Acesso</th>
+                                <th style="text-align:right;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="access-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 5. CHAT SUPPORT VIEW -->
+            <section id="view-chat" class="panel-view">
+                <h2 class="view-title"><i class="fa-solid fa-comments" style="color:var(--primary);"></i> Central de Suporte Chat</h2>
+                <p style="color:var(--text-muted); font-size:0.95rem; margin-bottom: 1.5rem;">Atenda os alunos e visualize seus e-mails de cadastro para suporte direto.</p>
+
+                <div class="chat-layout">
+                    <div class="chat-sidebar" id="chat-users-list">
+                        <!-- Lista de chats via Firebase -->
+                    </div>
+                    <div class="chat-main-area">
+                        <div id="chat-header" class="chat-header-bar">Selecione um aluno</div>
+                        <div id="chat-messages" class="chat-messages-box">
+                            <p style="color:var(--text-muted); text-align:center; margin-top:auto; margin-bottom:auto;">Nenhuma conversa selecionada no momento.</p>
+                        </div>
+                        <div class="chat-input-bar">
+                            <input type="text" id="chat-input" class="search-input" placeholder="Escreva uma resposta para o aluno..." onkeydown="if(event.key==='Enter') sendAdminMessage()">
+                            <button class="btn-action btn-primary" onclick="sendAdminMessage()"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. USERS VIEW -->
+            <section id="view-users" class="panel-view">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h2 class="view-title"><i class="fa-solid fa-users" style="color:var(--primary);"></i> Base de Usuários Cadastrados</h2>
+                        <p style="color:var(--text-muted); font-size:0.95rem;">Lista completa de contas sincronizadas do Firebase (Tabela <code>users</code>).</p>
+                    </div>
+                    <button class="btn-action btn-secondary" onclick="loadUsers()">
+                        <i class="fa-solid fa-arrows-rotate"></i> Atualizar Lista
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Nome / Identificador</th>
+                                <th>E-mail</th>
+                                <th>WhatsApp</th>
+                                <th>País</th>
+                                <th>Produtos Ativos</th>
+                                <th>Data de Registro</th>
+                                <th style="text-align:right;">Ações / Chat</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Inserido dinamicamente via Firebase -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL: LIBERAR ACESSO A PRODUTOS POR E-MAIL -->
     <div id="grant-access-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
         <div style="background:#0B0B10; border:1px solid var(--border-color); border-radius:24px; width:100%; max-width:620px; max-height:90vh; overflow-y:auto; padding:2rem; box-shadow:0 30px 60px rgba(0,0,0,0.95);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
-                <h3 style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:1.3rem; display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-user-shield" style="color:var(--success);"></i> Liberar Acesso a Produtos
+                <h3 style="font-family:'Montserrat',sans-serif; font-size:1.25rem; font-weight:800; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-unlock-keyhole" style="color:var(--success);"></i> <span>Liberar Produtos para E-mail</span>
                 </h3>
-                <button onclick="closeGrantAccessModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeGrantAccessModal()" class="icon-btn" style="width:32px; height:32px; border:none; background:rgba(255,255,255,0.05);"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:1.2rem;">
+                <!-- E-mail do Cliente -->
                 <div>
-                    <label class="form-label"><i class="fa-solid fa-envelope" style="color:var(--primary);"></i> E-mail do Aluno / Cliente</label>
-                    <input type="email" id="grant-email" class="search-input" placeholder="Digite ou selecione o e-mail..." list="registered-emails-list" oninput="onGrantEmailChange()" onchange="onGrantEmailChange()">
+                    <label class="form-label"><i class="fa-regular fa-envelope" style="color:var(--primary);"></i> Escolha ou Digite o E-mail da Conta</label>
+                    <input type="email" id="grant-email" class="search-input" placeholder="exemplo@cliente.com" list="registered-emails-list" oninput="onGrantEmailChange()" onchange="onGrantEmailChange()">
                     <datalist id="registered-emails-list"></datalist>
                     <span style="font-size:0.75rem; color:var(--text-muted); margin-top:4px; display:block;">Selecione um e-mail para ver e alterar os produtos que este perfil pode acessar.</span>
                 </div>
 
+                <!-- Lista de Produtos para Selecionar -->
                 <div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <label class="form-label" style="margin:0;"><i class="fa-solid fa-box-open" style="color:var(--info);"></i> Selecione os Produtos Permitidos</label>
                         <button type="button" class="btn-action btn-secondary" onclick="toggleSelectAllGrantProducts()" style="font-size:0.75rem; padding:4px 10px;">Marcar/Desmarcar Todos</button>
                     </div>
+                    
                     <div id="grant-products-list" style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; padding-right:6px;">
                         <p style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:1rem;">Carregando produtos...</p>
                     </div>
@@ -786,44 +655,62 @@
         </div>
     </div>
 
+    <!-- PRODUCT MODAL -->
     <div id="product-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); display:none; align-items:center; justify-content:center; z-index:2000; padding:1.5rem;">
         <div style="background:#0B0B10; border:1px solid var(--border-color); border-radius:24px; width:100%; max-width:760px; max-height:92vh; overflow-y:auto; padding:2rem; box-shadow:0 30px 60px rgba(0,0,0,0.95);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; border-bottom:1px solid var(--border-color); padding-bottom:1rem;">
-                <h3 id="modal-title-text" style="font-family:'Montserrat',sans-serif; font-weight:800; font-size:1.3rem;">Cadastrar Novo Produto</h3>
-                <button onclick="closeProductModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                <h3 style="font-family:'Montserrat',sans-serif; font-size:1.3rem; font-weight:800; display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-box-archive" style="color:var(--primary);"></i> <span id="modal-title-text">Cadastrar Novo Produto</span>
+                </h3>
+                <button onclick="closeProductModal()" class="icon-btn" style="width:32px; height:32px; border:none; background:rgba(255,255,255,0.05);"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
+            
             <div style="display:flex; flex-direction:column; gap:1.2rem;">
-                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:1rem;">
+                
+                <!-- Título e Categoria -->
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1rem;">
                     <div>
-                        <label class="form-label"><i class="fa-solid fa-heading"></i> Título do Produto / Beat</label>
-                        <input type="text" id="p-titulo" class="search-input" placeholder="Ex: Afrobeat Type Beat - Kingdom" oninput="generateSlugPreview()">
+                        <label class="form-label"><i class="fa-solid fa-heading" style="color:var(--primary);"></i> Título do Produto (`titulo`)</label>
+                        <input type="text" id="p-titulo" class="search-input" placeholder="Ex: FLP SEMBA MORENA - PROD. LONEKE NO BEAT" oninput="generateSlugPreview()">
                     </div>
                     <div>
-                        <label class="form-label"><i class="fa-solid fa-layer-group"></i> Categoria</label>
-                        <select id="p-categoria" class="search-input" onchange="toggleCursosSection()">
-                            <option value="beats">Beats</option>
-                            <option value="cursos">Cursos & Aulas</option>
-                            <option value="drumkits">Drumkits</option>
-                            <option value="flp">FLP Projects</option>
-                            <option value="samplepacks">Sample Packs</option>
-                            <option value="soundkits">Soundkits</option>
-                            <option value="tutorials">Tutoriais</option>
+                        <label class="form-label"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Categoria (`categoria`)</label>
+                        <select id="p-categoria" class="search-input" style="cursor:pointer;" onchange="toggleCursosSection()">
+                            <option value="beats" selected>beats</option>
+                            <option value="drumkits">drumkits</option>
+                            <option value="plugins">plugins</option>
+                            <option value="cursos">cursos</option>
+                            <option value="flp">flp</option>
+                            <option value="ebooks">ebooks</option>
+                            <option value="loop kit">loop kit</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:1rem;">
-                    <div>
-                        <label class="form-label"><i class="fa-solid fa-link"></i> Slug URL (`slug`)</label>
-                        <input type="text" id="p-slug" class="search-input" placeholder="ex: afrobeat-type-beat-kingdom">
+                <!-- Seção Dinâmica de Módulos e Aulas -->
+                <div id="cursos-section" style="display:none; background:rgba(255,255,255,0.02); padding:1.2rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                        <label class="form-label" style="margin:0; color:var(--primary); font-size:0.85rem;"><i class="fa-solid fa-graduation-cap"></i> Módulos e Aulas do Curso</label>
+                        <button type="button" class="btn-action btn-secondary" onclick="addModuloUI()" style="font-size:0.75rem; padding:6px 12px;"><i class="fa-solid fa-plus"></i> Adicionar Módulo</button>
                     </div>
-                    <div>
-                        <label class="form-label"><i class="fa-solid fa-fire"></i> Qtd. Vendas Inicial</label>
-                        <input type="number" id="p-vendas" class="search-input" placeholder="0" value="0">
+                    <div id="modulos-list" style="display:flex; flex-direction:column; gap:1rem;">
+                        <!-- Módulos e Aulas serão renderizados aqui via JS -->
                     </div>
                 </div>
 
+                <!-- Slug automático e Vendas Iniciais -->
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1rem;">
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-link" style="color:var(--info);"></i> Slug do Produto (`slug`)</label>
+                        <input type="text" id="p-slug" class="search-input" placeholder="flp-semba-morena">
+                    </div>
+                    <div>
+                        <label class="form-label"><i class="fa-solid fa-fire" style="color:var(--warning);"></i> Qtd. Vendas (`vendas`)</label>
+                        <input type="number" id="p-vendas" class="search-input" value="0" placeholder="0">
+                    </div>
+                </div>
+
+                <!-- Preços: Antigo e Atual -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; background:rgba(255,255,255,0.02); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
                     <div>
                         <label class="form-label" style="color:#FF6B6B;"><i class="fa-solid fa-tag"></i> Preço Antigo (`precoAntigo`)</label>
@@ -835,6 +722,7 @@
                     </div>
                 </div>
 
+                <!-- Links de Checkout, Vídeo e Material do Curso -->
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:1rem;">
                     <div>
                         <label class="form-label"><i class="fa-solid fa-cart-shopping" style="color:var(--success);"></i> Link Checkout (`linkCheckout`)</label>
@@ -842,7 +730,7 @@
                     </div>
                     <div>
                         <label class="form-label"><i class="fa-brands fa-youtube" style="color:#FF0000;"></i> Link Vídeo (`videoLink`)</label>
-                        <input type="text" id="p-videoLink" class="search-input" placeholder="https://youtu.be/...">
+                        <input type="text" id="p-videoLink" class="search-input" placeholder="https://youtu.be/u1-_DwlJALg">
                     </div>
                     <div>
                         <label class="form-label"><i class="fa-solid fa-file-arrow-down" style="color:var(--info);"></i> Material do Curso (`linkMaterial`)</label>
@@ -850,61 +738,67 @@
                     </div>
                 </div>
 
+                <!-- Configuração de Destaque -->
                 <div style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
-                    <label class="form-label"><i class="fa-solid fa-star" style="color:#FFD700;"></i> Produto em Destaque?</label>
-                    <select id="p-destaque" class="search-input">
-                        <option value="false">Não</option>
-                        <option value="true">Sim (Destacar na Home)</option>
+                    <label class="form-label"><i class="fa-solid fa-star" style="color:#FFD700;"></i> Produto Destaque (`destaque`)</label>
+                    <select id="p-destaque" class="search-input" style="cursor:pointer;">
+                        <option value="true">Sim (Destaque Ativo)</option>
+                        <option value="false" selected>Não</option>
                     </select>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <label class="form-label"><i class="fa-solid fa-image"></i> Imagem de Capa (URL ou Arquivo)</label>
-                    <input type="text" id="p-imagem-url" class="search-input" placeholder="Cole a URL da Imagem (Ex: Firebase, Imgur, etc.)" oninput="previewImageUrl()">
-                    <div style="text-align:center; color:var(--text-muted); font-size:0.75rem;">OU FAÇA UPLOAD DO ARQUIVO</div>
-                    <input type="file" id="p-imagem-file" accept="image/*" class="search-input" onchange="previewImageFile(event)">
-                    
-                    <div id="img-preview-container" style="display:none; justify-content:center; align-items:center; margin-top:10px;">
-                        <img id="img-preview" src="" alt="Preview" style="max-width:140px; max-height:140px; border-radius:12px; border:1px solid var(--border-color);">
-                    </div>
-                </div>
-
+                <!-- Descrição -->
                 <div>
-                    <label class="form-label"><i class="fa-solid fa-align-left"></i> Descrição do Produto</label>
-                    <textarea id="p-descricao" class="search-input" rows="3" placeholder="Escreva os detalhes, BPM, tom, formato do arquivo..."></textarea>
+                    <label class="form-label"><i class="fa-solid fa-align-left" style="color:var(--primary);"></i> Descrição (`descricao`)</label>
+                    <textarea id="p-descricao" class="search-input" placeholder="Descubra os segredos de programação e groove de um Semba tradicional..." style="height:75px; resize:none;"></textarea>
+                </div>
+                
+                <!-- Imagem do Produto -->
+                <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 1rem;">
+                    <label class="form-label"><i class="fa-solid fa-image" style="color:var(--primary);"></i> Caminho ou URL da Imagem (`imagem`)</label>
+                    <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:1rem; margin-bottom:8px;">
+                        <input type="text" id="p-imagem-url" class="search-input" placeholder="img/prontos/FLP SEMBA MORENA.jpg ou URL" oninput="previewImageUrl()">
+                        <input type="file" id="p-imagem-file" class="search-input" accept="image/*" style="padding: 8px 12px; cursor:pointer;" onchange="previewImageFile(event)">
+                    </div>
+                    <div id="img-preview-container" style="display:none; align-items:center; gap:12px; margin-top:8px; background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:8px;">
+                        <img id="img-preview" src="" alt="Preview" style="width:45px; height:45px; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);">
+                        <span style="font-size:0.8rem; color:var(--text-muted);" id="img-preview-info">Pré-visualização da Capa</span>
+                    </div>
                 </div>
 
-                <div id="cursos-section" style="display:none; background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:1.2rem; border-radius:var(--radius-md);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                        <h4 style="font-size:1rem; font-weight:700; color:var(--primary);"><i class="fa-solid fa-graduation-cap"></i> Módulos e Aulas do Curso</h4>
-                        <button type="button" class="btn-action btn-secondary" onclick="addModuloUI()"><i class="fa-solid fa-plus"></i> Adicionar Módulo</button>
-                    </div>
-                    <div id="modulos-list" style="display:flex; flex-direction:column; gap:1rem;">
-                        </div>
-                </div>
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2rem; border-top:1px solid var(--border-color); padding-top:1.2rem;">
                 <button class="btn-action btn-secondary" onclick="closeProductModal()">Cancelar</button>
-                <button class="btn-action btn-primary" id="btn-save-product" onclick="saveProduct()">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> Salvar no Banco de Dados
-                </button>
+                <button class="btn-action btn-primary" id="btn-save-product" onclick="saveProduct()"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar no Banco de Dados</button>
             </div>
         </div>
     </div>
 
+    <!-- SCRIPT PRINCIPAL E INTEGRAÇÃO FIREBASE -->
     <script>
         // ==========================================
-        // 1. CONFIGURAÇÃO E CONSTANTES FIREBASE
+        // 1. CONFIGURAÇÃO DO FIREBASE
         // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAccxyuNdi_E9Dpz0YPnWZwRC6mBU0AcVo",
+            authDomain: "loneke-site-oficial.firebaseapp.com",
+            projectId: "loneke-site-oficial",
+            storageBucket: "loneke-site-oficial.firebasestorage.app",
+            messagingSenderId: "716824234386",
+            appId: "1:716824234386:web:9bd3a8359ba388eb0dd94b",
+            measurementId: "G-MGJJPNDTM0"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
         const auth = firebase.auth();
         const storage = firebase.storage();
 
+        let editingProductId = null; 
         let activeChatUserId = null;
-        let editingProductId = null;
-
-        // Subscrições Firebase
         let unsubscribeDashboard = null;
         let unsubscribePendingSales = null;
         let unsubscribeProducts = null;
@@ -912,13 +806,6 @@
         let unsubscribeUsers = null;
         let unsubscribeChatList = null;
         let unsubscribeChatMessages = null;
-
-        // ESTADO DE FILTRO E PAGINAÇÃO DE PRODUTOS (15 por página)
-        let allProductsList = [];
-        let productSearchTerm = '';
-        let productCategoryFilter = 'all';
-        let currentProductPage = 1;
-        const PRODUCTS_PER_PAGE = 15;
 
         // ==========================================
         // 2. AUTENTICAÇÃO
@@ -952,15 +839,21 @@
             }, 80);
         });
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('horizontalMenu');
-            if (menu) menu.classList.toggle('open');
+        function toggleSidebar(open) {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+            if (open === undefined) {
+                sidebar.classList.toggle('open');
+            } else if (open) {
+                sidebar.classList.add('open');
+            } else {
+                sidebar.classList.remove('open');
+            }
         }
 
         function showToast(message, type = 'info', title = '') {
             const container = document.getElementById('toast-container');
             if (!container) return;
-
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             const icons = { success: 'fa-circle-check', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
@@ -973,7 +866,6 @@
                     <div class="toast-msg">${escapeHtml(message)}</div>
                 </div>
             `;
-
             container.appendChild(toast);
             setTimeout(() => {
                 toast.classList.add('toast-out');
@@ -982,56 +874,50 @@
         }
 
         function escapeHtml(str) {
-            if (!str) return '';
+            if (str === null || str === undefined) return '';
             return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         function escapeJsArg(str) {
-            if (!str) return '';
-            return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '');
         }
 
-        function parseFirebaseDate(val) {
-            if (!val) return new Date(0);
-            if (val.toDate && typeof val.toDate === 'function') return val.toDate();
-            if (typeof val === 'number') return new Date(val);
-            if (typeof val === 'string') {
-                const parsed = Date.parse(val);
-                if (!isNaN(parsed)) return new Date(parsed);
-            }
-            return new Date(0);
+        function parseFirebaseDate(dateVal) {
+            if (!dateVal) return new Date();
+            if (typeof dateVal.toDate === 'function') return dateVal.toDate();
+            if (dateVal instanceof Date) return dateVal;
+            if (typeof dateVal === 'number') return new Date(dateVal);
+            return new Date(dateVal);
         }
 
-        function switchView(viewName, element) {
-            document.querySelectorAll('.panel-view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-
-            const target = document.getElementById(`view-${viewName}`);
-            if (target) target.classList.add('active');
-
-            if (element) {
-                element.classList.add('active');
-            } else {
-                const activeBtn = document.querySelector(`.nav-link[onclick*="${viewName}"]`);
-                if (activeBtn) activeBtn.classList.add('active');
+        function switchView(tabId, menuElement) {
+            toggleSidebar(false);
+            if (menuElement) {
+                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                menuElement.classList.add('active');
             }
 
-            // Fechar menu móbile se aberto
-            const menu = document.getElementById('horizontalMenu');
-            if (menu) menu.classList.remove('open');
+            document.querySelectorAll('.panel-view').forEach(view => view.classList.remove('active'));
+            const targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
 
-            // Carregar dados da view
-            if (viewName === 'dashboard') loadDashboardData('day');
-            if (viewName === 'pending-sales') loadPendingSales();
-            if (viewName === 'products') loadProducts();
-            if (viewName === 'access') loadAccessRequests();
-            if (viewName === 'chat') loadChatUsers();
-            if (viewName === 'users') loadUsers();
+            if (tabId === 'dashboard') loadDashboardData('day');
+            if (tabId === 'pending-sales') loadPendingSales();
+            if (tabId === 'products') loadProducts();
+            if (tabId === 'access') loadAccessRequests();
+            if (tabId === 'chat') loadChatUsers();
+            if (tabId === 'users') loadUsers();
         }
 
         function logoutAdmin() {
@@ -1087,64 +973,80 @@
             card.className = 'modulo-card';
             card.setAttribute('data-id', moduloId);
             card.style.cssText = 'background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border-color); padding: 1rem; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.8rem;';
-            
+
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                    <input type="text" class="search-input modulo-titulo" placeholder="Nome do Módulo (ex: Módulo 1 - Introdução)" value="${escapeHtml(nomeModulo)}">
+                    <input type="text" class="search-input modulo-titulo" placeholder="Nome do Módulo (ex: Módulo 1 - Introdução)" value="${escapeHtml(nomeModulo)}" style="font-weight: 700;">
                     <button type="button" class="btn-action btn-danger btn-icon-only" onclick="this.closest('.modulo-card').remove()" title="Remover Módulo"><i class="fa-solid fa-trash"></i></button>
                 </div>
-                <div class="aulas-container" style="display: flex; flex-direction: column; gap: 0.6rem; padding-left: 10px; border-left: 2px solid var(--primary);">
-                    </div>
-                <button type="button" class="btn-action btn-secondary" onclick="addAulaUI(this.closest('.modulo-card'))" style="align-self: flex-start; font-size: 0.78rem;"><i class="fa-solid fa-plus"></i> Adicionar Aula</button>
+                
+                <div class="aulas-list" style="display: flex; flex-direction: column; gap: 0.6rem; padding-left: 0.5rem; border-left: 2px solid rgba(229,9,20,0.4);"></div>
+
+                <div style="display: flex; justify-content: flex-start; margin-top: 4px;">
+                    <button type="button" class="btn-action btn-secondary" onclick="addAulaUI('${moduloId}')" style="font-size:0.75rem; padding: 6px 12px;">
+                        <i class="fa-solid fa-plus-circle" style="color:var(--success);"></i> Adicionar Aula
+                    </button>
+                </div>
             `;
-            
+
             list.appendChild(card);
-            
-            const aulasContainer = card.querySelector('.aulas-container');
-            if (Array.isArray(aulas) && aulas.length > 0) {
-                aulas.forEach(a => addAulaUI(card, a.titulo || a.title || '', a.youtubeUrl || a.url || ''));
+
+            if (aulas && aulas.length > 0) {
+                aulas.forEach(a => addAulaUI(moduloId, a.titulo || a.nome || '', a.youtubeUrl || a.url || ''));
             } else {
-                addAulaUI(card);
+                addAulaUI(moduloId);
             }
         }
 
-        function addAulaUI(moduloCard, titulo = '', url = '') {
-            const aulasContainer = moduloCard.querySelector('.aulas-container');
-            const row = document.createElement('div');
-            row.className = 'aula-row';
-            row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center;';
-            
-            row.innerHTML = `
-                <input type="text" class="search-input aula-titulo" placeholder="Título da Aula" value="${escapeHtml(titulo)}">
-                <input type="text" class="search-input aula-url" placeholder="URL do Vídeo YouTube" value="${escapeHtml(url)}">
-                <button type="button" class="btn-action btn-danger btn-icon-only" onclick="this.closest('.aula-row').remove()" title="Remover Aula"><i class="fa-solid fa-xmark"></i></button>
+        function addAulaUI(moduloId, tituloAula = '', urlAula = '') {
+            const moduloCard = document.querySelector(`.modulo-card[data-id="${moduloId}"]`);
+            if (!moduloCard) return;
+
+            const aulasList = moduloCard.querySelector('.aulas-list');
+            const aulaRow = document.createElement('div');
+            aulaRow.className = 'aula-row';
+            aulaRow.style.cssText = 'display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 8px; align-items: center;';
+
+            aulaRow.innerHTML = `
+                <input type="text" class="search-input aula-titulo" placeholder="Nome da Aula" value="${escapeHtml(tituloAula)}" style="font-size:0.82rem; padding: 8px 12px;">
+                <input type="text" class="search-input aula-url" placeholder="Link do YouTube (https://...)" value="${escapeHtml(urlAula)}" style="font-size:0.82rem; padding: 8px 12px;">
+                <button type="button" class="btn-action btn-danger btn-icon-only" onclick="this.closest('.aula-row').remove()" title="Remover Aula" style="width:32px; height:32px;"><i class="fa-solid fa-xmark"></i></button>
             `;
-            
-            aulasContainer.appendChild(row);
+
+            aulasList.appendChild(aulaRow);
         }
 
         function getModulosData() {
             const modulos = [];
-            document.querySelectorAll('.modulo-card').forEach(card => {
+            const moduloCards = document.querySelectorAll('.modulo-card');
+
+            moduloCards.forEach(card => {
                 const tituloInput = card.querySelector('.modulo-titulo');
                 const titulo = tituloInput ? tituloInput.value.trim() : '';
                 const aulaRows = card.querySelectorAll('.aula-row');
                 const aulas = [];
-                
+
                 aulaRows.forEach(row => {
                     const aulaTituloInput = row.querySelector('.aula-titulo');
                     const aulaUrlInput = row.querySelector('.aula-url');
                     const aulaTitulo = aulaTituloInput ? aulaTituloInput.value.trim() : '';
                     const aulaUrl = aulaUrlInput ? aulaUrlInput.value.trim() : '';
                     if (aulaTitulo || aulaUrl) {
-                        aulas.push({ titulo: aulaTitulo, youtubeUrl: aulaUrl });
+                        aulas.push({
+                            titulo: aulaTitulo,
+                            youtubeUrl: aulaUrl
+                        });
                     }
                 });
-                
+
                 if (titulo || aulas.length > 0) {
-                    modulos.push({ nome: titulo, aulas: aulas });
+                    modulos.push({
+                        nome: titulo,
+                        aulas: aulas
+                    });
                 }
             });
+
             return modulos;
         }
 
@@ -1155,6 +1057,7 @@
             const url = document.getElementById('p-imagem-url').value.trim();
             const container = document.getElementById('img-preview-container');
             const img = document.getElementById('img-preview');
+            
             if (url) {
                 img.src = url;
                 container.style.display = 'flex';
@@ -1168,6 +1071,7 @@
             const file = event.target.files[0];
             const container = document.getElementById('img-preview-container');
             const img = document.getElementById('img-preview');
+
             if (file) {
                 img.src = URL.createObjectURL(file);
                 container.style.display = 'flex';
@@ -1177,14 +1081,14 @@
             }
         }
 
-        function openProductModal() {
+        function openProductModal() { 
             resetProductModal();
             document.getElementById('modal-title-text').innerText = 'Cadastrar Novo Produto';
-            document.getElementById('product-modal').style.display = 'flex';
+            document.getElementById('product-modal').style.display = 'flex'; 
         }
 
-        function closeProductModal() {
-            document.getElementById('product-modal').style.display = 'none';
+        function closeProductModal() { 
+            document.getElementById('product-modal').style.display = 'none'; 
             resetProductModal();
         }
 
@@ -1206,25 +1110,40 @@
             document.getElementById('p-imagem-file').value = '';
             document.getElementById('img-preview-container').style.display = 'none';
             document.getElementById('modulos-list').innerHTML = '';
-            toggleCursosSection();
+            document.getElementById('cursos-section').style.display = 'none';
         }
 
         // ==========================================
-        // 6. EDIÇÃO DE PRODUTO
+        // 6. CARREGAR PRODUTO PARA EDIÇÃO
         // ==========================================
         async function editProduct(docId) {
             try {
-                const docSnap = await db.collection('produtos').doc(docId).get();
-                if (!docSnap.exists) {
-                    showToast('Produto não encontrado.', 'warning');
+                if (!docId) return;
+                const doc = await db.collection('produtos').doc(docId).get();
+                if (!doc.exists) {
+                    showToast('Produto não encontrado no banco de dados.', 'warning');
                     return;
                 }
-                const p = docSnap.data();
+
+                const p = doc.data();
                 editingProductId = docId;
 
                 document.getElementById('modal-title-text').innerText = 'Editar Produto';
-                document.getElementById('p-titulo').value = p.titulo || p.title || p.name || '';
-                document.getElementById('p-categoria').value = p.categoria || p.category || 'beats';
+
+                document.getElementById('p-titulo').value = p.titulo || p.title || p.nome || '';
+                
+                const catSelect = document.getElementById('p-categoria');
+                const catVal = (p.categoria || p.category || 'beats').toLowerCase();
+                
+                let optionExists = Array.from(catSelect.options).some(opt => opt.value === catVal);
+                if (!optionExists && catVal) {
+                    const newOpt = document.createElement('option');
+                    newOpt.value = catVal;
+                    newOpt.innerText = catVal;
+                    catSelect.appendChild(newOpt);
+                }
+                catSelect.value = catVal || 'beats';
+
                 document.getElementById('p-slug').value = p.slug || '';
                 document.getElementById('p-vendas').value = p.vendas ?? p.sales ?? 0;
                 document.getElementById('p-precoAntigo').value = p.precoAntigo ?? p.oldPrice ?? '';
@@ -1234,9 +1153,10 @@
                 document.getElementById('p-linkMaterial').value = p.linkMaterial || '';
                 document.getElementById('p-destaque').value = String(p.destaque === true || p.featured === true);
                 document.getElementById('p-descricao').value = p.descricao || p.description || '';
-
+                
                 const imgVal = p.imagem || p.imageUrl || p.capa || '';
                 document.getElementById('p-imagem-url').value = imgVal;
+
                 if (imgVal) {
                     document.getElementById('img-preview').src = imgVal;
                     document.getElementById('img-preview-container').style.display = 'flex';
@@ -1276,64 +1196,56 @@
             const linkMaterial = document.getElementById('p-linkMaterial').value.trim();
             const destaque = document.getElementById('p-destaque').value === 'true';
             const descricao = document.getElementById('p-descricao').value.trim();
+            
             const imageUrlInput = document.getElementById('p-imagem-url').value.trim();
-            const fileInput = document.getElementById('p-imagem-file');
+            const imageFileInput = document.getElementById('p-imagem-file').files[0];
 
             if (!titulo) {
                 showToast('Preencha o título do produto.', 'warning');
                 return;
             }
 
+            const modulosData = (categoria === 'cursos') ? getModulosData() : [];
+
             const btnSave = document.getElementById('btn-save-product');
             btnSave.disabled = true;
-            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando no Banco...';
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
 
             try {
                 let finalImageUrl = imageUrlInput;
-
-                if (fileInput.files.length > 0) {
-                    const file = fileInput.files[0];
-                    const storageRef = storage.ref(`produtos/${Date.now()}_${file.name}`);
-                    const uploadTask = await storageRef.put(file);
+                if (imageFileInput) {
+                    btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando Imagem...';
+                    const fileRef = storage.ref(`products/${Date.now()}_${imageFileInput.name}`);
+                    const uploadTask = await fileRef.put(imageFileInput);
                     finalImageUrl = await uploadTask.ref.getDownloadURL();
                 }
 
-                const payload = {
-                    titulo: titulo,
-                    title: titulo,
-                    categoria: categoria,
-                    category: categoria,
+                const productData = {
                     slug: slug || titulo.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-                    vendas: vendas,
-                    sales: vendas,
+                    titulo: titulo,
+                    categoria: categoria || "beats",
+                    descricao: descricao,
+                    imagem: finalImageUrl || "",
                     precoAntigo: precoAntigo,
-                    oldPrice: precoAntigo,
                     precoAtual: precoAtual,
-                    price: precoAtual,
-                    preco: precoAtual,
+                    vendas: vendas,
                     linkCheckout: linkCheckout,
                     videoLink: videoLink,
                     linkMaterial: linkMaterial,
                     destaque: destaque,
-                    featured: destaque,
-                    descricao: descricao,
-                    description: descricao,
-                    imagem: finalImageUrl,
-                    imageUrl: finalImageUrl,
-                    capa: finalImageUrl,
+                    modulos: modulosData,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                if (categoria === 'cursos') {
-                    payload.modulos = getModulosData();
-                }
-
                 if (editingProductId) {
-                    await db.collection('produtos').doc(editingProductId).set(payload, { merge: true });
+                    await db.collection('produtos').doc(editingProductId).set(productData, { merge: true });
                     showToast('Produto atualizado com sucesso!', 'success');
                 } else {
-                    payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                    await db.collection('produtos').add(payload);
+                    const newDocRef = db.collection('produtos').doc();
+                    productData.uuid = newDocRef.id;
+                    productData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+
+                    await newDocRef.set(productData);
                     showToast('Produto cadastrado com sucesso!', 'success');
                 }
 
@@ -1341,7 +1253,7 @@
             } catch (err) {
                 console.error("Erro ao salvar produto:", err);
                 if (err.code === 'permission-denied') {
-                    showToast('Permissão negada. Atualize as Regras no Firebase Console.', 'warning', 'Erro de Permissão');
+                    showToast('Permissão negada. Atualize as Regras de Segurança no Firebase Console.', 'warning', 'Erro de Permissão');
                 } else {
                     showToast('Erro ao salvar: ' + err.message, 'warning');
                 }
@@ -1380,7 +1292,6 @@
                         const data = doc.data();
                         const status = data.status || '';
                         const isApproved = ['completed', 'approved', 'concluido', 'pago'].includes(status.toLowerCase());
-                        
                         if (isApproved) {
                             const txDate = parseFirebaseDate(data.createdAt);
                             if (txDate >= startDate) {
@@ -1398,33 +1309,48 @@
 
             Promise.all([
                 db.collection('users').get(),
-                db.collection('produtos').get()
-            ]).then(([usersSnap, prodsSnap]) => {
-                document.getElementById('kpi-users').innerText = usersSnap.size || 0;
-            }).catch(err => console.log("Erro ao carregar estatísticas gerais:", err));
+                db.collection('user_access').get(),
+                db.collection('transactions').get()
+            ]).then(([usersSnap, accessSnap, txSnap]) => {
+                const uniqueEmails = new Set();
+                usersSnap.forEach(doc => {
+                    const u = doc.data();
+                    const e = u.email || u.userEmail;
+                    if (e) uniqueEmails.add(e.toLowerCase().trim());
+                });
+                accessSnap.forEach(doc => {
+                    const e = doc.data().userEmail || doc.data().email;
+                    if (e) uniqueEmails.add(e.toLowerCase().trim());
+                });
+                txSnap.forEach(doc => {
+                    const e = doc.data().userEmail || doc.data().email;
+                    if (e && e !== 'N/A') uniqueEmails.add(e.toLowerCase().trim());
+                });
+                document.getElementById('kpi-users').innerText = uniqueEmails.size;
+            }).catch(() => {
+                document.getElementById('kpi-users').innerText = '0';
+            });
         }
 
         // ==========================================
-        // 9. VENDAS PENDENTES (CHECKOUT)
+        // 9. GERENCIAR VENDAS PENDENTES DO CHECKOUT
         // ==========================================
         function loadPendingSales() {
             const tbody = document.getElementById('pending-sales-table-body');
-            if (!tbody) return;
-
             if (unsubscribePendingSales) unsubscribePendingSales();
 
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando compras do checkout...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Buscando pedidos no banco...</td></tr>`;
 
             unsubscribePendingSales = db.collection('transactions')
                 .onSnapshot(snapshot => {
                     tbody.innerHTML = '';
                     if (snapshot.empty) {
-                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhuma venda cadastrada.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhuma venda cadastrada no sistema.</td></tr>`;
                         return;
                     }
 
-                    const docsList = [];
                     let pendingCount = 0;
+                    const docsList = [];
 
                     snapshot.forEach(doc => {
                         docsList.push({ id: doc.id, ...doc.data() });
@@ -1440,9 +1366,11 @@
                         const amount = t.amount || t.preco || 0;
                         const status = (t.status || 'pending').toLowerCase();
                         const proof = t.proofUrl || t.comprovativo || t.paymentMethod || 'Checkout';
+                        
                         const dateFormatted = t.createdAt ? parseFirebaseDate(t.createdAt).toLocaleString('pt-AO') : 'Hoje';
 
                         const isPending = (status === 'pending' || status === 'pendente' || status === 'aguardando');
+
                         if (isPending) pendingCount++;
 
                         const statusBadge = isPending 
@@ -1459,38 +1387,52 @@
 
                         tbody.innerHTML += `
                             <tr style="${isPending ? 'background: rgba(245, 158, 11, 0.03);' : ''}">
-                                <td style="font-size:0.8rem; color:var(--text-muted);">${dateFormatted}</td>
-                                <td><strong style="color:#FFF;">${escapeHtml(email)}</strong></td>
-                                <td>${escapeHtml(productTitle)}</td>
-                                <td><strong style="color:var(--success);">${Number(amount).toLocaleString('pt-AO')} Kz</strong></td>
+                                <td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(dateFormatted)}</td>
+                                <td>
+                                    <strong style="color:var(--primary);">${escapeHtml(email)}</strong>
+                                </td>
+                                <td><strong>${escapeHtml(productTitle)}</strong></td>
+                                <td style="color:var(--success); font-weight:700;">${Number(amount).toLocaleString('pt-AO')} Kz</td>
                                 <td>${proofDisplay}</td>
                                 <td>${statusBadge}</td>
                                 <td style="text-align:right;">
-                                    ${isPending 
-                                        ? `<button class="btn-action btn-success" onclick="authorizePendingSale('${txId}', '${safeEmail}', '${safeProductId}', '${safeProductTitle}')">
-                                            <i class="fa-solid fa-user-check"></i> Aprovar & Liberar
-                                           </button>`
-                                        : `<span style="color:var(--text-muted); font-size:0.8rem;"><i class="fa-solid fa-lock-open"></i> Acesso Liberado</span>`
-                                    }
+                                    ${isPending ? `
+                                        <button class="btn-action btn-success" style="padding:6px 14px; font-size:0.78rem;" onclick="approveCheckoutSale('${txId}', '${safeEmail}', '${safeProductId}', '${safeProductTitle}')">
+                                            <i class="fa-solid fa-check"></i> Autorizar & Liberar
+                                        </button>
+                                    ` : `
+                                        <button class="btn-action btn-secondary" style="padding:6px 14px; font-size:0.78rem;" disabled>
+                                            <i class="fa-solid fa-user-check"></i> Liberado
+                                        </button>
+                                    `}
                                 </td>
                             </tr>
                         `;
                     });
+
+                    if (pendingCount === 0 && tbody.children.length > 0) {
+                        tbody.innerHTML += `<tr><td colspan="7" style="text-align:center; color:var(--success); padding:1rem; font-size:0.85rem;"><i class="fa-solid fa-circle-check"></i> Todas as vendas do checkout foram autorizadas!</td></tr>`;
+                    }
                 }, err => {
-                    console.error("Erro ao carregar vendas:", err);
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar vendas.</td></tr>`;
+                    console.error("Erro ao carregar vendas pendentes:", err);
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar pedidos pendentes.</td></tr>`;
                 });
         }
 
-        async function authorizePendingSale(txId, email, productId, productTitle) {
+        async function approveCheckoutSale(txId, email, productId, productTitle) {
+            if (!email || email === 'N/A') {
+                showToast('E-mail inválido para liberar acesso.', 'warning');
+                return;
+            }
+
             Swal.fire({
-                title: 'Aprovar Pagamento?',
-                text: `Deseja autorizar a compra e liberar o produto "${productTitle}" para o e-mail: ${email}?`,
+                title: 'Autorizar Venda e Liberar Produto?',
+                text: `Esta ação vai aprovar a compra e liberar o produto (${productTitle}) para o e-mail: ${email}.`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#10B981',
                 cancelButtonColor: '#1F1F2C',
-                confirmButtonText: 'Sim, Aprovar e Liberar',
+                confirmButtonText: 'Sim, Liberar Acesso',
                 cancelButtonText: 'Cancelar',
                 customClass: { popup: 'swal2-popup-dark', title: 'swal2-title-dark' }
             }).then(async (result) => {
@@ -1520,14 +1462,18 @@
                             const userDocRef = db.collection('users').doc(userQuery.docs[0].id);
                             if (productId) {
                                 batch.set(userDocRef, {
-                                    produtos: { [productId]: true }
+                                    produtos: {
+                                        [productId]: true
+                                    }
                                 }, { merge: true });
                             }
                         }
 
                         await batch.commit();
+
                         showToast(`Produto "${productTitle}" liberado com sucesso para ${email}!`, 'success');
                         loadPendingSales();
+
                     } catch (err) {
                         console.error("Erro ao autorizar venda:", err);
                         showToast('Erro ao liberar acesso: ' + err.message, 'warning');
@@ -1537,181 +1483,84 @@
         }
 
         // ==========================================
-        // 10. CARREGAR PRODUTOS COM FILTRO & PAGINAÇÃO (15 POR PÁGINA)
+        // 10. CARREGAR PRODUTOS (CORRIGIDO)
         // ==========================================
         function loadProducts() {
             const tbody = document.getElementById('products-table-body');
             if (!tbody) return;
-
             if (unsubscribeProducts) unsubscribeProducts();
 
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando catálogo...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando produtos...</td></tr>`;
 
             unsubscribeProducts = db.collection('produtos')
                 .onSnapshot(snapshot => {
-                    allProductsList = [];
+                    tbody.innerHTML = '';
                     if (snapshot.empty) {
-                        renderProductsTable();
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum produto cadastrado na tabela de produtos.</td></tr>`;
                         return;
                     }
 
+                    const prods = [];
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        allProductsList.push({ ...data, docId: doc.id });
+                        prods.push({
+                            ...data,
+                            docId: doc.id
+                        });
                     });
 
-                    allProductsList.sort((a, b) => parseFirebaseDate(b.createdAt || b.updatedAt) - parseFirebaseDate(a.createdAt || a.updatedAt));
-                    applyProductFilters();
+                    prods.sort((a, b) => parseFirebaseDate(b.createdAt || b.updatedAt) - parseFirebaseDate(a.createdAt || a.updatedAt));
+
+                    prods.forEach(p => {
+                        const realDocId = p.docId;
+                        const title = p.titulo || p.title || p.nome || 'Sem Título';
+                        const category = p.categoria || p.category || 'beats';
+                        const oldPrice = p.precoAntigo ?? p.oldPrice ?? 0;
+                        const currentPrice = p.precoAtual ?? p.price ?? p.preco ?? 0;
+                        const salesCount = p.vendas ?? p.sales ?? 0;
+                        const isFeatured = p.destaque === true || p.featured === true;
+                        const imgUrl = p.imagem || p.imageUrl || p.capa || '';
+
+                        const oldPriceHtml = oldPrice > 0 ? `<span class="price-old">${Number(oldPrice).toLocaleString('pt-AO')} Kz</span>` : '';
+                        const newPriceHtml = `<span class="price-new">${currentPrice > 0 ? Number(currentPrice).toLocaleString('pt-AO') + ' Kz' : 'Grátis'}</span>`;
+
+                        const imgTag = imgUrl 
+                            ? `<img src="${escapeHtml(imgUrl)}" style="width:42px; height:42px; object-fit:cover; border-radius:8px; border:1px solid var(--border-color);" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div style=\'width:42px; height:42px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; color:var(--text-muted);\'><i class=\'fa-solid fa-image\'></i></div>';">`
+                            : `<div style="width:42px; height:42px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; color:var(--text-muted);"><i class="fa-solid fa-image"></i></div>`;
+
+                        const safeId = escapeJsArg(realDocId);
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${imgTag}</td>
+                                <td>
+                                    <strong style="font-size:0.9rem; display:block;">${escapeHtml(title)}</strong>
+                                    <span style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(p.slug || '')}</span>
+                                </td>
+                                <td><span class="cat-badge">${escapeHtml(category)}</span></td>
+                                <td>
+                                    <div class="price-box">
+                                        ${oldPriceHtml}
+                                        ${newPriceHtml}
+                                    </div>
+                                </td>
+                                <td><strong>${salesCount}</strong></td>
+                                <td>
+                                    ${isFeatured ? '<i class="fa-solid fa-star" style="color:#FFD700;"></i> Sim' : '<span style="color:var(--text-muted);">Não</span>'}
+                                </td>
+                                <td style="text-align:right;">
+                                    <div style="display:inline-flex; gap:6px;">
+                                        <button class="btn-action btn-secondary btn-icon-only" onclick="editProduct('${safeId}')" title="Editar Produto"><i class="fa-solid fa-pen-to-square" style="color:var(--info);"></i></button>
+                                        <button class="btn-action btn-danger btn-icon-only" onclick="deleteProduct('${safeId}')" title="Eliminar Produto"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
                 }, err => {
                     console.error("Erro ao carregar produtos:", err);
                     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar produtos: ${escapeHtml(err.message)}</td></tr>`;
                 });
-        }
-
-        function applyProductFilters() {
-            const searchInput = document.getElementById('product-search-input');
-            const catSelect = document.getElementById('product-category-filter');
-
-            productSearchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            productCategoryFilter = catSelect ? catSelect.value.toLowerCase() : 'all';
-            currentProductPage = 1; // Reseta para primeira página ao pesquisar
-
-            renderProductsTable();
-        }
-
-        function renderProductsTable() {
-            const tbody = document.getElementById('products-table-body');
-            const paginationContainer = document.getElementById('products-pagination');
-            if (!tbody) return;
-
-            let filtered = allProductsList.filter(p => {
-                const title = (p.titulo || p.title || p.name || '').toLowerCase();
-                const category = (p.categoria || p.category || '').toLowerCase();
-                const slug = (p.slug || '').toLowerCase();
-
-                const matchesSearch = !productSearchTerm || 
-                    title.includes(productSearchTerm) || 
-                    category.includes(productSearchTerm) || 
-                    slug.includes(productSearchTerm);
-
-                const matchesCat = productCategoryFilter === 'all' || category === productCategoryFilter;
-
-                return matchesSearch && matchesCat;
-            });
-
-            const totalItems = filtered.length;
-            const totalPages = Math.ceil(totalItems / PRODUCTS_PER_PAGE) || 1;
-
-            if (currentProductPage > totalPages) currentProductPage = totalPages;
-            if (currentProductPage < 1) currentProductPage = 1;
-
-            const startIdx = (currentProductPage - 1) * PRODUCTS_PER_PAGE;
-            const endIdx = startIdx + PRODUCTS_PER_PAGE;
-            const pageItems = filtered.slice(startIdx, endIdx);
-
-            tbody.innerHTML = '';
-
-            if (totalItems === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:3rem;">
-                    <i class="fa-solid fa-box-open" style="font-size:2rem; margin-bottom:0.5rem; display:block; opacity:0.5;"></i>
-                    Nenhum produto encontrado com os filtros aplicados.
-                </td></tr>`;
-                if (paginationContainer) paginationContainer.innerHTML = '';
-                return;
-            }
-
-            pageItems.forEach(p => {
-                const realDocId = p.docId;
-                const title = p.titulo || p.title || p.name || 'Sem Título';
-                const category = p.categoria || p.category || 'Geral';
-                const slug = p.slug || 'n-a';
-                const precoAntigo = p.precoAntigo ?? p.oldPrice ?? 0;
-                const precoAtual = p.precoAtual ?? p.price ?? p.preco ?? 0;
-                const vendas = p.vendas ?? p.sales ?? 0;
-                const destaque = (p.destaque === true || p.featured === true);
-                const imgUrl = p.imagem || p.imageUrl || p.capa || 'https://via.placeholder.com/60x60/12121A/FFFFFF?text=BEAT';
-
-                const safeId = escapeJsArg(realDocId);
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td>
-                            <img src="${escapeHtml(imgUrl)}" alt="Capa" style="width:48px; height:48px; border-radius:10px; object-fit:cover; border:1px solid var(--border-color);">
-                        </td>
-                        <td>
-                            <div style="font-weight:700; color:#FFF; font-size:0.92rem;">${escapeHtml(title)}</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">/producao/${escapeHtml(slug)}</div>
-                        </td>
-                        <td><span class="cat-badge"><i class="fa-solid fa-tag" style="color:var(--primary); font-size:0.7rem;"></i> ${escapeHtml(category)}</span></td>
-                        <td>
-                            <div class="price-box">
-                                ${precoAntigo > 0 ? `<span class="price-old">${Number(precoAntigo).toLocaleString('pt-AO')} Kz</span>` : ''}
-                                <span class="price-new">${Number(precoAtual).toLocaleString('pt-AO')} Kz</span>
-                            </div>
-                        </td>
-                        <td><strong style="color:var(--info); font-size:0.9rem;">${vendas}</strong> vds</td>
-                        <td>
-                            ${destaque 
-                                ? `<span style="background:rgba(16, 185, 129, 0.15); color:var(--success); padding:4px 10px; border-radius:20px; font-weight:700; font-size:0.72rem; border:1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-star"></i> Sim</span>`
-                                : `<span style="background:rgba(255, 255, 255, 0.05); color:var(--text-muted); padding:4px 10px; border-radius:20px; font-weight:600; font-size:0.72rem;">Não</span>`
-                            }
-                        </td>
-                        <td style="text-align:right;">
-                            <div style="display:inline-flex; gap:8px;">
-                                <button class="btn-action btn-secondary btn-icon-only" onclick="editProduct('${safeId}')" title="Editar Produto"><i class="fa-solid fa-pen-to-square" style="color:var(--info);"></i></button>
-                                <button class="btn-action btn-danger btn-icon-only" onclick="deleteProduct('${safeId}')" title="Eliminar Produto"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            renderProductsPaginationControls(totalItems, totalPages, startIdx + 1, Math.min(endIdx, totalItems));
-        }
-
-        function renderProductsPaginationControls(totalItems, totalPages, startNum, endNum) {
-            const paginationContainer = document.getElementById('products-pagination');
-            if (!paginationContainer) return;
-
-            if (totalPages <= 1) {
-                paginationContainer.innerHTML = `
-                    <div style="font-size:0.82rem; color:var(--text-muted);">
-                        Mostrando <strong>${totalItems}</strong> de <strong>${totalItems}</strong> produtos
-                    </div>
-                `;
-                return;
-            }
-
-            let pageBtnsHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === currentProductPage) {
-                    pageBtnsHTML += `<button class="pagination-btn active">${i}</button>`;
-                } else if (i === 1 || i === totalPages || (i >= currentProductPage - 1 && i <= currentProductPage + 1)) {
-                    pageBtnsHTML += `<button class="pagination-btn" onclick="goToProductPage(${i})">${i}</button>`;
-                } else if (i === currentProductPage - 2 || i === currentProductPage + 2) {
-                    pageBtnsHTML += `<span style="color:var(--text-muted); padding:0 4px;">...</span>`;
-                }
-            }
-
-            paginationContainer.innerHTML = `
-                <div style="font-size:0.82rem; color:var(--text-muted);">
-                    Mostrando <strong>${startNum}-${endNum}</strong> de <strong>${totalItems}</strong> produtos
-                </div>
-                <div style="display:flex; gap:6px; align-items:center;">
-                    <button class="pagination-btn" ${currentProductPage === 1 ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} onclick="goToProductPage(${currentProductPage - 1})">
-                        <i class="fa-solid fa-chevron-left"></i> Anterior
-                    </button>
-                    ${pageBtnsHTML}
-                    <button class="pagination-btn" ${currentProductPage === totalPages ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''} onclick="goToProductPage(${currentProductPage + 1})">
-                        Próximo <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-            `;
-        }
-
-        function goToProductPage(page) {
-            currentProductPage = page;
-            renderProductsTable();
         }
 
         function deleteProduct(docId) {
@@ -1744,49 +1593,75 @@
             const tbody = document.getElementById('access-table-body');
             if (unsubscribeAccess) unsubscribeAccess();
 
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando permissões...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando permissões e acessos...</td></tr>`;
 
             try {
                 const accessSnap = await db.collection('user_access').get();
+
                 tbody.innerHTML = '';
+
                 if (accessSnap.empty) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhuma solicitação ou acesso registrado.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum registro encontrado em user_access.</td></tr>`;
                     return;
                 }
 
-                accessSnap.forEach(doc => {
-                    const acc = { id: doc.id, ...doc.data() };
-                    const userEmail = acc.userEmail || acc.email || 'N/A';
-                    const productTitle = acc.productTitle || acc.titulo || 'Produto Geral';
-                    const productId = acc.productId || '';
-                    const userId = acc.userId || '';
-                    const whatsapp = acc.whatsapp || acc.phone || 'Sem WhatsApp';
-                    const currentStatus = (acc.status || 'locked').toLowerCase();
-                    const isUnlocked = currentStatus === 'unlocked';
+                const accessList = [];
 
-                    const safeUserId = escapeJsArg(userId);
-                    const safeUserEmail = escapeJsArg(userEmail);
-                    const safeProductId = escapeJsArg(productId);
+                accessSnap.forEach(doc => {
+                    const acc = doc.data();
+                    accessList.push({
+                        id: doc.id,
+                        userId: acc.userId || '',
+                        userEmail: acc.userEmail || acc.email || '',
+                        userName: acc.userName || 'Cliente',
+                        whatsapp: acc.whatsapp || '',
+                        productId: acc.productId || '',
+                        productTitle: acc.productTitle || 'Produto Sem Título',
+                        status: acc.status || 'locked',
+                        requestedAt: acc.requestedAt ? parseFirebaseDate(acc.requestedAt) : new Date()
+                    });
+                });
+
+                accessList.sort((a, b) => b.requestedAt - a.requestedAt);
+
+                accessList.forEach(acc => {
+                    const currentStatus = acc.status || 'locked';
+                    const isUnlocked = currentStatus === 'unlocked';
+                    const cleanWhatsapp = acc.whatsapp ? String(acc.whatsapp).replace(/\D/g, '') : '';
+                    
+                    const clientIdentifier = acc.userEmail 
+                        ? `${escapeHtml(acc.userName || 'Cliente')} <br><span style="font-size:0.75rem; color:var(--primary);"><i class="fa-regular fa-envelope"></i> ${escapeHtml(acc.userEmail)}</span>` 
+                        : escapeHtml(acc.userName || acc.userId || 'Utilizador');
+
+                    const safeUserId = escapeJsArg(acc.userId || '');
+                    const safeUserEmail = escapeJsArg(acc.userEmail || '');
+                    const safeProductId = escapeJsArg(acc.productId || '');
 
                     tbody.innerHTML += `
                         <tr>
-                            <td><strong style="color:#FFF;">${escapeHtml(userEmail)}</strong></td>
-                            <td>${escapeHtml(productTitle)}</td>
-                            <td><span style="color:var(--text-muted); font-size:0.85rem;"><i class="fa-brands fa-whatsapp" style="color:var(--success);"></i> ${escapeHtml(whatsapp)}</span></td>
+                            <td>${clientIdentifier}</td>
+                            <td><strong>${escapeHtml(acc.productTitle)}</strong></td>
                             <td>
-                                ${isUnlocked 
-                                    ? `<span style="background:rgba(16,185,129,0.15); color:var(--success); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem;"><i class="fa-solid fa-lock-open"></i> Liberado</span>`
-                                    : `<span style="background:rgba(229,9,20,0.15); color:var(--primary); padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem;"><i class="fa-solid fa-lock"></i> Bloqueado</span>`
-                                }
+                                ${cleanWhatsapp ? `
+                                    <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                        <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(acc.whatsapp)}
+                                    </a>
+                                ` : '<span style="color:var(--text-muted);">N/A</span>'}
+                            </td>
+                            <td>
+                                <span style="padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; background:${isUnlocked ? 'rgba(16,185,129,0.15); color:var(--success);' : 'rgba(245,158,11,0.15); color:var(--warning);'}">
+                                    ${isUnlocked ? '<i class="fa-solid fa-lock-open"></i> Liberado' : '<span style="color:var(--warning);"><i class="fa-solid fa-lock"></i> Revogado</span>'}
+                                </span>
                             </td>
                             <td style="text-align:right;">
-                                <button class="btn-action ${isUnlocked ? 'btn-danger' : 'btn-primary'}" onclick="toggleAccess('${acc.id}', '${currentStatus}', '${safeUserId}', '${safeUserEmail}', '${safeProductId}')">
+                                <button class="btn-action ${isUnlocked ? 'btn-secondary' : 'btn-primary'}" onclick="toggleAccess('${acc.id}', '${currentStatus}', '${safeUserId}', '${safeUserEmail}', '${safeProductId}')">
                                     ${isUnlocked ? 'Revogar Acesso' : 'Liberar Acesso'}
                                 </button>
                             </td>
                         </tr>
                     `;
                 });
+
             } catch (err) {
                 console.error("Erro ao carregar solicitações de acesso:", err);
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#FF4D4D; padding:2rem;">Erro ao carregar dados de acesso.</td></tr>`;
@@ -1795,11 +1670,12 @@
 
         async function toggleAccess(id, currentStatus, userId, userEmail, productId) {
             const newStatus = currentStatus === 'unlocked' ? 'locked' : 'unlocked';
+            
             try {
                 const batch = db.batch();
+
                 const cleanDocId = id.includes('_') ? id : `${userEmail.replace(/[^a-z0-9]/gi, '_')}_${productId}`;
                 const accessRef = db.collection('user_access').doc(cleanDocId);
-
                 batch.set(accessRef, {
                     status: newStatus,
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1814,13 +1690,17 @@
                 if (targetDocId && productId) {
                     const userRef = db.collection('users').doc(targetDocId);
                     batch.set(userRef, {
-                        produtos: { [productId]: (newStatus === 'unlocked') }
+                        produtos: {
+                            [productId]: (newStatus === 'unlocked')
+                        }
                     }, { merge: true });
                 }
 
                 await batch.commit();
+
                 showToast(`Acesso ao produto ${newStatus === 'unlocked' ? 'liberado' : 'revogado'} com sucesso!`, 'success');
                 loadAccessRequests();
+
             } catch (err) {
                 console.error("Erro ao alterar acesso:", err);
                 showToast('Erro ao atualizar permissão: ' + err.message, 'warning');
@@ -1834,32 +1714,58 @@
             const datalist = document.getElementById('registered-emails-list');
             datalist.innerHTML = '';
             try {
+                const uniqueEmails = new Set();
                 const usersSnap = await db.collection('users').get();
                 usersSnap.forEach(uDoc => {
                     const u = uDoc.data();
                     const e = u.email || u.userEmail;
-                    if (e) {
-                        datalist.innerHTML += `<option value="${escapeHtml(e)}">`;
-                    }
+                    if (e) uniqueEmails.add(e.toLowerCase().trim());
                 });
-            } catch (e) {}
+                const txSnap = await db.collection('transactions').get();
+                txSnap.forEach(tDoc => {
+                    const e = tDoc.data().userEmail || tDoc.data().email;
+                    if (e && e !== 'N/A') uniqueEmails.add(e.toLowerCase().trim());
+                });
 
+                uniqueEmails.forEach(email => {
+                    const opt = document.createElement('option');
+                    opt.value = email;
+                    datalist.appendChild(opt);
+                });
+            } catch (err) {
+                console.warn('Não foi possível carregar sugestões de e-mail:', err);
+            }
+
+            await renderGrantProductsList();
+        }
+
+        async function renderGrantProductsList() {
             const productsList = document.getElementById('grant-products-list');
-            productsList.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando lista de produtos...</p>`;
+            productsList.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">Carregando produtos...</p>`;
 
             try {
-                const prodsSnap = await db.collection('produtos').get();
-                productsList.innerHTML = '';
-                if (prodsSnap.empty) {
-                    productsList.innerHTML = `<p style="color:var(--text-muted); font-size:0.85rem; text-align:center;">Nenhum produto cadastrado.</p>`;
+                const pSnap = await db.collection('produtos').get();
+                if (pSnap.empty) {
+                    productsList.innerHTML = `<p style="color:var(--warning); font-size:0.85rem; text-align:center;">Nenhum produto cadastrado para liberar.</p>`;
                     return;
                 }
 
-                prodsSnap.forEach(doc => {
-                    const p = doc.data();
-                    const pId = doc.id;
-                    const pTitle = p.titulo || p.title || p.name || 'Sem Título';
-                    const pCat = p.categoria || p.category || 'Geral';
+                const prods = [];
+                pSnap.forEach(pDoc => {
+                    const pData = pDoc.data();
+                    prods.push({
+                        id: pDoc.id,
+                        titulo: pData.titulo || pData.title || pData.nome || 'Produto sem título',
+                        categoria: pData.categoria || pData.category || 'geral'
+                    });
+                });
+                prods.sort((a, b) => (a.titulo || '').localeCompare(b.titulo || ''));
+
+                productsList.innerHTML = '';
+                prods.forEach(p => {
+                    const pId = p.id;
+                    const pTitle = p.titulo;
+                    const pCat = p.categoria;
 
                     productsList.innerHTML += `
                         <label class="product-checkbox-item">
@@ -1879,6 +1785,7 @@
         async function onGrantEmailChange() {
             const emailInput = document.getElementById('grant-email').value.trim().toLowerCase();
             const checkboxes = document.querySelectorAll('input[name="grant_product_ids"]');
+            
             checkboxes.forEach(cb => cb.checked = false);
 
             if (!emailInput) return;
@@ -1924,52 +1831,65 @@
 
         async function submitGrantAccess() {
             const emailInput = document.getElementById('grant-email').value.trim().toLowerCase();
+            const allBoxes = document.querySelectorAll('input[name="grant_product_ids"]');
+
             if (!emailInput) {
-                showToast('Informe o e-mail do aluno/cliente.', 'warning');
+                showToast('Informe o e-mail do cliente.', 'warning');
                 return;
             }
 
             const btnSubmit = document.getElementById('btn-grant-access');
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando Permissões...';
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando Acessos...';
 
             try {
-                const checkboxes = document.querySelectorAll('input[name="grant_product_ids"]');
-                const batch = db.batch();
-
+                let clientName = 'Cliente VIP';
+                let clientWhatsapp = '';
                 let userId = null;
+
                 const userQuery = await db.collection('users').where('email', '==', emailInput).limit(1).get();
                 if (!userQuery.empty) {
+                    const uData = userQuery.docs[0].data();
+                    clientName = uData.name || uData.nome || uData.displayName || clientName;
+                    clientWhatsapp = uData.whatsapp || uData.telefone || '';
                     userId = userQuery.docs[0].id;
                 }
 
-                let countGranted = 0;
+                const batch = db.batch();
                 const userProductsUpdate = { produtos: {} };
+                let countGranted = 0;
 
-                checkboxes.forEach(cb => {
-                    const productId = cb.value;
-                    const productTitle = cb.getAttribute('data-title') || 'Produto VIP';
-                    const productCategory = cb.getAttribute('data-category') || 'geral';
-                    const isChecked = cb.checked;
-
-                    const cleanDocId = `${emailInput.replace(/[^a-z0-9]/gi, '_')}_${productId}`;
-                    const accessRef = db.collection('user_access').doc(cleanDocId);
+                allBoxes.forEach(box => {
+                    const productId = box.value;
+                    const productTitle = box.getAttribute('data-title');
+                    const productCategory = box.getAttribute('data-category');
+                    const isChecked = box.checked;
+                    
+                    const docId = `${emailInput.replace(/[^a-z0-9]/gi, '_')}_${productId}`;
+                    const docRef = db.collection('user_access').doc(docId);
 
                     if (isChecked) {
                         countGranted++;
-                        batch.set(accessRef, {
+                        batch.set(docRef, {
                             userEmail: emailInput,
+                            userId: userId || emailInput,
+                            userName: clientName,
+                            whatsapp: clientWhatsapp,
                             productId: productId,
                             productTitle: productTitle,
                             category: productCategory,
                             status: 'unlocked',
+                            requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
                             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                         }, { merge: true });
 
                         userProductsUpdate.produtos[productId] = true;
                     } else {
-                        batch.set(accessRef, {
+                        batch.set(docRef, {
                             userEmail: emailInput,
+                            userId: userId || emailInput,
+                            userName: clientName,
+                            whatsapp: clientWhatsapp,
                             productId: productId,
                             productTitle: productTitle,
                             category: productCategory,
@@ -1987,9 +1907,11 @@
                 }
 
                 await batch.commit();
+
                 showToast(`Sucesso! ${countGranted} produto(s) liberado(s) para o e-mail ${emailInput}.`, 'success');
                 closeGrantAccessModal();
                 loadAccessRequests();
+
             } catch (err) {
                 console.error("Erro ao liberar acessos:", err);
                 showToast("Erro ao liberar acessos: " + err.message, "warning");
@@ -2040,37 +1962,48 @@
 
                         return `
                             <div class="chat-user-item ${isActive}" onclick="selectChatUser('${c.id}', '${safeUserName}', '${safeUserEmail}')">
-                                <div style="width:38px; height:38px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; color:#FFF; font-weight:700;">
-                                    <i class="fa-solid fa-user"></i>
-                                </div>
-                                <div style="display:flex; flex-direction:column; overflow:hidden;">
-                                    <span style="font-weight:700; font-size:0.88rem; color:#FFF;">${escapeHtml(userName)}</span>
-                                    <span style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap; text-overflow:ellipsis; overflow:hidden;">${escapeHtml(userEmail || 'Aluno')}</span>
+                                <div class="avatar-box" style="width:36px; height:36px; font-size:0.9rem;"><i class="fa-solid fa-user"></i></div>
+                                <div style="overflow:hidden; width:100%;">
+                                    <strong style="font-size:0.88rem; display:block; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;">${escapeHtml(userName)}</strong>
+                                    ${userEmail ? `<span style="font-size:0.75rem; color:var(--primary); display:block; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;"><i class="fa-regular fa-envelope"></i> ${escapeHtml(userEmail)}</span>` : ''}
+                                    <span style="font-size:0.72rem; color:var(--text-muted); text-overflow:ellipsis; white-space:nowrap; overflow:hidden; display:block;">${escapeHtml(c.lastMessage || 'Conversa iniciada')}</span>
                                 </div>
                             </div>
                         `;
                     });
 
-                    const itemsHtml = await Promise.all(chatItemsPromises);
-                    chatUsersList.innerHTML = itemsHtml.join('');
+                    const itemsHtmlArr = await Promise.all(chatItemsPromises);
+                    chatUsersList.innerHTML = itemsHtmlArr.join('');
                 });
         }
 
-        function selectChatUser(userId, userName, userEmail) {
+        async function selectChatUser(userId, userName, userEmail) {
             activeChatUserId = userId;
 
-            document.querySelectorAll('.chat-user-item').forEach(el => el.classList.remove('active'));
+            if (!userEmail) {
+                try {
+                    const uDoc = await db.collection('users').doc(userId).get();
+                    if (uDoc.exists) {
+                        const uData = uDoc.data();
+                        userEmail = uData.email || uData.userEmail || '';
+                    }
+                } catch (err) {
+                    console.log("Erro ao recuperar e-mail:", err);
+                }
+            }
 
-            const header = document.getElementById('chat-header');
-            header.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <i class="fa-solid fa-circle-user" style="color:var(--primary); font-size:1.4rem;"></i>
-                    <div>
-                        <div style="font-weight:800; font-size:0.95rem;">${escapeHtml(userName)}</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">${escapeHtml(userEmail)}</div>
-                    </div>
+            const emailDisplay = userEmail 
+                ? `<a href="mailto:${escapeHtml(userEmail)}?subject=Suporte%20Loneke%20no%20Beat" style="font-size:0.82rem; font-weight:normal; color:var(--primary); text-decoration:none;" title="Enviar e-mail para este cliente"><i class="fa-regular fa-envelope"></i> ${escapeHtml(userEmail)}</a>`
+                : `<span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">E-mail não cadastrado</span>`;
+
+            document.getElementById('chat-header').innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                    <span><i class="fa-solid fa-user" style="color:var(--primary); margin-right:8px;"></i> ${escapeHtml(userName)}</span>
+                    <div>${emailDisplay}</div>
                 </div>
             `;
+
+            loadChatUsers();
 
             const box = document.getElementById('chat-messages');
             if (unsubscribeChatMessages) unsubscribeChatMessages();
@@ -2107,54 +2040,71 @@
             const text = input.value.trim();
             if (!text) return;
 
-            db.collection('chats').doc(activeChatUserId).collection('messages').add({
+            input.value = '';
+
+            const batch = db.batch();
+            const chatRef = db.collection('chats').doc(activeChatUserId);
+            const msgRef = chatRef.collection('messages').doc();
+
+            batch.set(chatRef, {
+                lastMessage: text,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            batch.set(msgRef, {
                 sender: 'admin',
                 text: text,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            db.collection('chats').doc(activeChatUserId).set({
-                lastMessage: text,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-
-            input.value = '';
+            batch.commit().catch(err => {
+                console.error("Erro ao enviar mensagem:", err);
+                showToast("Erro ao enviar mensagem: " + err.message, "warning");
+            });
         }
 
         // ==========================================
-        // 13. BASE DE USUÁRIOS
+        // 13. BASE DE USUÁRIOS & BOTÃO DE CHAT
         // ==========================================
         function loadUsers() {
             const tbody = document.getElementById('users-table-body');
             if (!tbody) return;
-
             if (unsubscribeUsers) unsubscribeUsers();
 
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando lista de usuários...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando usuários...</td></tr>`;
 
             unsubscribeUsers = db.collection('users')
                 .onSnapshot(snapshot => {
                     tbody.innerHTML = '';
                     if (snapshot.empty) {
-                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum usuário cadastrado na tabela <code>users</code>.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">Nenhum usuário cadastrado.</td></tr>`;
                         return;
                     }
 
+                    const usersList = [];
                     snapshot.forEach(doc => {
-                        const u = doc.data();
-                        const userId = doc.id;
-                        const userName = u.name || u.nome || u.displayName || 'Usuário Sem Nome';
-                        const userEmail = u.email || u.userEmail || 'Sem e-mail';
-                        const whatsapp = u.whatsapp || u.phone || 'N/A';
-                        const pais = u.country || u.pais || 'Angola';
-                        
+                        usersList.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+
+                    usersList.sort((a, b) => parseFirebaseDate(b.createdAt) - parseFirebaseDate(a.createdAt));
+
+                    usersList.forEach(u => {
+                        const userId = u.id;
+                        const userName = u.name || u.nome || u.displayName || 'Utilizador VIP';
+                        const userEmail = u.email || u.userEmail || 'N/A';
+                        const whatsapp = u.whatsapp || u.telefone || '';
+                        const country = u.pais || u.country || 'Angola';
+                        const createdAt = u.createdAt ? parseFirebaseDate(u.createdAt).toLocaleDateString('pt-AO') : 'N/A';
+
                         let activeProductsCount = 0;
                         if (u.produtos && typeof u.produtos === 'object') {
-                            activeProductsCount = Object.values(u.produtos).filter(val => val === true).length;
+                            activeProductsCount = Object.values(u.produtos).filter(v => v === true).length;
                         }
 
-                        const createdAt = u.createdAt ? parseFirebaseDate(u.createdAt).toLocaleDateString('pt-AO') : 'Desconhecida';
-
+                        const cleanWhatsapp = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
                         const safeUserId = escapeJsArg(userId);
                         const safeUserName = escapeJsArg(userName);
                         const safeUserEmail = escapeJsArg(userEmail);
@@ -2162,12 +2112,19 @@
                         tbody.innerHTML += `
                             <tr>
                                 <td>
-                                    <div style="font-weight:700; color:#FFF;">${escapeHtml(userName)}</div>
-                                    <div style="font-size:0.75rem; color:var(--text-muted);">ID: ${escapeHtml(userId.substring(0, 8))}...</div>
+                                    <strong>${escapeHtml(userName)}</strong>
                                 </td>
-                                <td><strong style="color:var(--info);">${escapeHtml(userEmail)}</strong></td>
-                                <td><span style="color:var(--text-muted); font-size:0.85rem;"><i class="fa-brands fa-whatsapp" style="color:var(--success);"></i> ${escapeHtml(whatsapp)}</span></td>
-                                <td>${escapeHtml(pais)}</td>
+                                <td>
+                                    <span style="color:var(--primary); font-weight:600;"><i class="fa-regular fa-envelope"></i> ${escapeHtml(userEmail)}</span>
+                                </td>
+                                <td>
+                                    ${cleanWhatsapp ? `
+                                        <a href="https://wa.me/${cleanWhatsapp}" target="_blank" style="color:var(--success); text-decoration:none;">
+                                            <i class="fa-brands fa-whatsapp"></i> ${escapeHtml(whatsapp)}
+                                        </a>
+                                    ` : '<span style="color:var(--text-muted);">N/A</span>'}
+                                </td>
+                                <td>${escapeHtml(country)}</td>
                                 <td><span class="cat-badge" style="background:rgba(16,185,129,0.1); color:var(--success); border-color:rgba(16,185,129,0.2);">${activeProductsCount} Ativo(s)</span></td>
                                 <td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(createdAt)}</td>
                                 <td style="text-align:right;">
@@ -2187,7 +2144,8 @@
         }
 
         function openUserChat(userId, userName, userEmail) {
-            switchView('chat');
+            const chatMenuItem = document.querySelector('.menu-item[onclick*="chat"]');
+            switchView('chat', chatMenuItem);
             selectChatUser(userId, userName, userEmail);
         }
     </script>
